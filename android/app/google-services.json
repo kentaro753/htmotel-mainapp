@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "927268228348",
+    "project_id": "demopj-5b390",
+    "storage_bucket": "demopj-5b390.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:927268228348:android:8acb33ebd8d0bac9bddb79",
+        "android_client_info": {
+          "package_name": "com.anonymous.AwesomeProject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7rtkZvvvo2PMeKoCcHuYXrwNxGK7bORM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
