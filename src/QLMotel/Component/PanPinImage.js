@@ -20,11 +20,13 @@ import { Text } from "react-native-paper";
 const PanPinImage = ({ image, isModalVisible, onClose }) => {
   const [imageHeight, setImageHeight] = useState(100);
   const [imageWidth, setImageWidth] = useState(Dimensions.get("window").width);
-  const [scale, setScale] = useState(new Animated.Value(1));
-  const [lastScale, setLastScale] = useState(1);
+  const scale = useRef(new Animated.Value(1)).current;
+  const lastScale = useRef(1);
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
-  const maxTranslate = 100;
+  const [maxTranslateX, setMaxTranslateX] = useState(0);
+  const [maxTranslateY, setMaxTranslateY] = useState(0);
+  //const [maxTranslate, setMaxTranslate] = useState(0);
   const lastTranslateX = useRef(0);
   const lastTranslateY = useRef(0);
 
@@ -52,14 +54,25 @@ const PanPinImage = ({ image, isModalVisible, onClose }) => {
     }
   }, [image, imageWidth]);
   const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
-    useNativeDriver: false,
+    useNativeDriver: true,
   });
   const onPinchStateChange = (event) => {
     if (event.nativeEvent.state === State.END) {
-      setLastScale(lastScale * event.nativeEvent.scale);
-      scale.setValue(1);
+      lastScale.current = Math.max(
+        1,
+        Math.min(lastScale.current * event.nativeEvent.scale, 1.75)
+      );
+      scale.setValue(lastScale.current);
+
+      if (lastScale.current > 1) {
+        setMaxTranslateX((imageWidth * (lastScale.current - 1)) / 3);
+        setMaxTranslateY((imageHeight * (lastScale.current - 1)) / 2);
+      } else {
+        setMaxTranslateX(0);
+        setMaxTranslateY(0);
+      }
     } else if (event.nativeEvent.state === State.BEGAN) {
-      setLastScale(scale._value);
+      scale.setValue(lastScale.current);
     }
   };
 
@@ -72,7 +85,7 @@ const PanPinImage = ({ image, isModalVisible, onClose }) => {
         },
       },
     ],
-    { useNativeDriver: false }
+    { useNativeDriver: true }
   );
 
   const onPanStateChange = (event) => {
@@ -80,14 +93,14 @@ const PanPinImage = ({ image, isModalVisible, onClose }) => {
       lastTranslateX.current += event.nativeEvent.translationX;
       lastTranslateY.current += event.nativeEvent.translationY;
 
-      // Giới hạn vị trí ảnh trong phạm vi nhất định
+      // Giới hạn vị trí kéo riêng theo X và Y
       lastTranslateX.current = Math.max(
-        -maxTranslate,
-        Math.min(lastTranslateX.current, maxTranslate)
+        -maxTranslateX,
+        Math.min(lastTranslateX.current, maxTranslateX)
       );
       lastTranslateY.current = Math.max(
-        -maxTranslate,
-        Math.min(lastTranslateY.current, maxTranslate)
+        -maxTranslateY,
+        Math.min(lastTranslateY.current, maxTranslateY)
       );
 
       translateX.setOffset(lastTranslateX.current);
@@ -119,7 +132,6 @@ const PanPinImage = ({ image, isModalVisible, onClose }) => {
       >
         <GestureHandlerRootView
           style={{
-            flex: 1,
             backgroundColor: "black",
             justifyContent: "center",
             alignItems: "center",
@@ -143,15 +155,15 @@ const PanPinImage = ({ image, isModalVisible, onClose }) => {
                         { scale },
                         {
                           translateX: translateX.interpolate({
-                            inputRange: [-maxTranslate, maxTranslate],
-                            outputRange: [-maxTranslate, maxTranslate],
-                            extrapolate: "clamp", // Giới hạn trong phạm vi maxTranslate
+                            inputRange: [-maxTranslateX, maxTranslateX],
+                            outputRange: [-maxTranslateX, maxTranslateX],
+                            extrapolate: "clamp",
                           }),
                         },
                         {
                           translateY: translateY.interpolate({
-                            inputRange: [-maxTranslate, maxTranslate],
-                            outputRange: [-maxTranslate, maxTranslate],
+                            inputRange: [-maxTranslateY, maxTranslateY],
+                            outputRange: [-maxTranslateY, maxTranslateY],
                             extrapolate: "clamp",
                           }),
                         },
@@ -166,13 +178,19 @@ const PanPinImage = ({ image, isModalVisible, onClose }) => {
             </Animated.View>
           </PanGestureHandler>
         </GestureHandlerRootView>
-
         {/* Nút đóng */}
         <TouchableOpacity
           onPress={onClose}
-          style={{ position: "absolute", top: 40, right: 20 }}
+          style={{
+            position: "absolute",
+            top: 40,
+            right: 20,
+            backgroundColor: "white",
+            padding: 7,
+            borderRadius: 50,
+          }}
         >
-          <Text style={{ color: "white", fontSize: 20 }}>Đóng</Text>
+          <Text style={{ color: "black", fontSize: 20 }}>Đóng</Text>
         </TouchableOpacity>
       </View>
     </Modal>

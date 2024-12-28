@@ -47,7 +47,7 @@ export default function IncidentDetail({ navigation, route }) {
   const { userLogin } = controller;
   const INCIDENTS = firestore()
     .collection("USERS")
-    .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
     .collection("INCIDENTS");
   const handleDeleteIncident = () => {
     Alert.alert(
@@ -61,7 +61,7 @@ export default function IncidentDetail({ navigation, route }) {
         },
         {
           text: "Có",
-          onPress: async () => {
+          onPress: () => {
             try {
               // Hàm xóa tệp đính kèm trên Firebase Storage
               const deleteAttachments = async () => {
@@ -69,7 +69,7 @@ export default function IncidentDetail({ navigation, route }) {
                   for (const attachment of attachments) {
                     if (attachment.url) {
                       const storageRef = storage().refFromURL(attachment.url);
-                      await storageRef
+                      storageRef
                         .delete()
                         .then(() =>
                           console.log(`Deleted file: ${attachment.url}`)
@@ -81,16 +81,14 @@ export default function IncidentDetail({ navigation, route }) {
                   }
                 }
               };
-
               // Xóa tệp đính kèm
-              await deleteAttachments();
-
-              // Xóa báo cáo sự cố trên Firestore
-              await INCIDENTS.doc(id).delete();
-              console.log("Sự cố deleted successfully");
-
-              // Quay lại màn hình trước
-              navigation.goBack();
+              deleteAttachments();
+              INCIDENTS.doc(id)
+                .delete()
+                .then(() => {
+                  console.log("Sự cố deleted successfully");
+                  navigation.goBack();
+                });
             } catch (error) {
               console.error("Delete failed:", error.message);
               Alert.alert("Lỗi", "Xóa báo cáo thất bại: " + error.message);
@@ -104,11 +102,9 @@ export default function IncidentDetail({ navigation, route }) {
 
   const handleFixIncident = async () => {
     if (isProcessing) return; // Chặn bấm nhiều lần
-    setIsProcessing(true); // Hiển thị processing
+    setIsProcessing(true);
     try {
-      const uploadedAttachments = []; // Array to store uploaded file details
-
-      // Upload each file and add details to uploadedAttachments
+      const uploadedAttachments = [];
       for (const attachment of newFile) {
         const uploadedFile = await uploadFile(attachment);
         if (uploadedFile) {
@@ -138,7 +134,7 @@ export default function IncidentDetail({ navigation, route }) {
   useEffect(() => {
     const loadincident = INCIDENTS.doc(id).onSnapshot((response) => {
       const data = response.data();
-      if (data.id != null) {
+      if (data) { // Kiểm tra dữ liệu tồn tại
         console.log(data.datetime.toDate());
         setIsFixed(data.isFixed);
         setData(data);
@@ -160,27 +156,27 @@ export default function IncidentDetail({ navigation, route }) {
         setMota(data.mota);
         setReportBy(data.reportBy);
         if (data.reportBy != "admin") {
-          if (userLogin.role == "admin") {
+          if (userLogin?.role == "admin") {
             const RENTERS = firestore()
               .collection("USERS")
-              .doc(userLogin.email)
+              .doc(userLogin?.email)
               .collection("RENTERS");
             RENTERS.doc(data.reportBy).onSnapshot((renter) => {
               const rdata = renter.data();
-              setReportName(rdata.fullName);
+              setReportName(rdata?.fullName || "N/A");
             });
           } else {
-            if (data.reportBy != userLogin.renterId) {
+            if (data.reportBy != userLogin?.renterId) {
               const RENTERS = firestore()
                 .collection("USERS")
-                .doc(userLogin.admin)
+                .doc(userLogin?.admin)
                 .collection("RENTERS");
               RENTERS.doc(data.reportBy).onSnapshot((renter) => {
                 const rdata = renter.data();
-                setReportName(rdata.fullName);
+                setReportName(rdata?.fullName || "N/A");
               });
             } else {
-              setReportName(userLogin.fullName);
+              setReportName(userLogin?.fullName);
             }
           }
         } else {
@@ -189,13 +185,17 @@ export default function IncidentDetail({ navigation, route }) {
         setAttachments(data.attachments);
         setLevel(data.level);
         setTitle(data.title);
+      } else {
+        console.log("Document not found or deleted.");
+        setData(null);
       }
     });
-
+  
     return () => {
       loadincident();
     };
   }, []);
+  
   const toggleModal = () => {
     setIsModalVisible(!isModalVisible);
   };
@@ -204,58 +204,6 @@ export default function IncidentDetail({ navigation, route }) {
     const startIndex = decodedUrl.lastIndexOf("/attachments/") + 13;
     const endIndex = decodedUrl.indexOf("?alt=media");
     return decodedUrl.substring(startIndex, endIndex);
-  };
-
-  const requestStoragePermission = async () => {
-    if (Platform.OS === "android" && Platform.Version < 33) {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.MANAGE_EXTERNAL_STORAGE,
-          {
-            title: "Cấp quyền lưu trữ",
-            message: "Ứng dụng cần quyền lưu trữ để tải file.",
-            buttonNeutral: "Hỏi sau",
-            buttonNegative: "Hủy",
-            buttonPositive: "Đồng ý",
-          }
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        console.error("Failed to request permission", err);
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const downloadFile = async (url, fileName) => {
-    // const hasPermission = await requestStoragePermission();
-    // if (!hasPermission) {
-    //   alert("Ứng dụng không có quyền lưu trữ.");
-    //   return;
-    // }
-
-    try {
-      const downloadDest = `${RNFS.DownloadDirectoryPath}/${fileName}`; // Lưu vào thư mục Download
-
-      const result = await RNFS.downloadFile({
-        fromUrl: url,
-        toFile: downloadDest,
-      }).promise;
-
-      if (result.statusCode === 200) {
-        console.log(`File downloaded successfully: ${downloadDest}`);
-        alert("File đã được tải về thành công!");
-      } else {
-        console.log(
-          `Failed to download file: Status code ${result.statusCode}`
-        );
-        alert("Tải xuống thất bại!");
-      }
-    } catch (error) {
-      console.error("Download error:", error);
-      alert("Có lỗi xảy ra trong quá trình tải xuống.");
-    }
   };
   const uploadFile = async (file) => {
     const blob = await uriToBlob(file.uri);
@@ -271,13 +219,100 @@ export default function IncidentDetail({ navigation, route }) {
       return null;
     }
   };
+  const requestStoragePermission = async () => {
+    if (Platform.OS === "android") {
+      if (Platform.Version >= 33) {
+        try {
+          const granted = await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
+            PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
+            PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
+          ]);
+          const allGranted = Object.values(granted).every(
+            (result) => result === PermissionsAndroid.RESULTS.GRANTED
+          );
+          if (!allGranted) {
+            alert("Ứng dụng cần quyền đọc dữ liệu phương tiện để tải file.");
+          }
+          return allGranted;
+        } catch (err) {
+          console.error("Failed to request permission", err);
+          return false;
+        }
+      } else if (Platform.Version >= 30) {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.MANAGE_EXTERNAL_STORAGE,
+            {
+              title: "Cấp quyền lưu trữ",
+              message: "Ứng dụng cần quyền lưu trữ để tải file.",
+              buttonNeutral: "Hỏi sau",
+              buttonNegative: "Hủy",
+              buttonPositive: "Đồng ý",
+            }
+          );
+          return granted === PermissionsAndroid.RESULTS.GRANTED;
+        } catch (err) {
+          console.error("Failed to request permission", err);
+          return false;
+        }
+      } else {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+            {
+              title: "Cấp quyền lưu trữ",
+              message: "Ứng dụng cần quyền lưu trữ để tải file.",
+              buttonNeutral: "Hỏi sau",
+              buttonNegative: "Hủy",
+              buttonPositive: "Đồng ý",
+            }
+          );
+          return granted === PermissionsAndroid.RESULTS.GRANTED;
+        } catch (err) {
+          console.error("Failed to request permission", err);
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+  const createDirectoryIfNotExists = async (path) => {
+    const exists = await RNFS.exists(path);
+    if (!exists) {
+      await RNFS.mkdir(path);
+      console.log(`Directory created at ${path}`);
+    }
+  };
+  const downloadFile = async (url, fileName) => {
+    try {
+      const downloadDest = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+      await createDirectoryIfNotExists(RNFS.DownloadDirectoryPath); // Kiểm tra thư mục
+      await RNFS.downloadFile({
+        fromUrl: url,
+        toFile: downloadDest,
+      })
+        .promise.then((result) => {
+          console.log(`File downloaded successfully: `, result);
+          alert("Tải xuống thành công!");
+        })
+        .catch((error) => {
+          console.error("Download error:", error);
+          alert("Có lỗi xảy ra trong quá trình tải xuống.");
+        });
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Có lỗi xảy ra trong quá trình tải xuống.");
+    }
+  };
+
   const handleSelectDocument = async () => {
     try {
       const res = await DocumentPicker.pick({
         type: [
           DocumentPicker.types.images, // Hình ảnh
           DocumentPicker.types.video, // Video
-          DocumentPicker.types.pdf, // PDF (nếu muốn hỗ trợ thêm)
+          DocumentPicker.types.pdf, // PDF
           "application/msword", // Word (.doc)
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // Word (.docx)
           "application/vnd.ms-excel", // Excel (.xls)
@@ -486,7 +521,7 @@ export default function IncidentDetail({ navigation, route }) {
           <View
             style={{ flexDirection: "row", justifyContent: "space-around" }}
           >
-            {userLogin.role == "admin" || userLogin.renterId == reportBy ? (
+            {userLogin?.role == "admin" || userLogin?.renterId == reportBy ? (
               <Button
                 style={{
                   backgroundColor: "#ff3300",
@@ -501,7 +536,7 @@ export default function IncidentDetail({ navigation, route }) {
                 </Text>
               </Button>
             ) : null}
-            {userLogin.role == "admin" ? (
+            {userLogin?.role == "admin" ? (
               <Button
                 style={{
                   backgroundColor: "royalblue",

@@ -23,6 +23,7 @@ import firestore from "@react-native-firebase/firestore";
 import ServiceIcon from "../Component/ServiceIcon";
 import ImageCropPicker from "react-native-image-crop-picker";
 import storage from "@react-native-firebase/storage";
+import { formatWithDots } from "../Component/SmallComponent";
 
 export default function AddRoom({ navigation, route }) {
   const { id } = route.params || {};
@@ -40,11 +41,11 @@ export default function AddRoom({ navigation, route }) {
   const { userLogin } = controller;
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
 
   const handleAddNewRoom = async () => {
@@ -244,7 +245,7 @@ export default function AddRoom({ navigation, route }) {
             <Icon source={icon} size={50} />
             <Text>{serviceName}</Text>
             <Text>
-              {fee} đ/{chargeBase}
+              {formatWithDots(fee.toString())}đ/{chargeBase}
             </Text>
           </View>
         </TouchableOpacity>

@@ -13,6 +13,7 @@ import firestore from "@react-native-firebase/firestore";
 import ServiceIcon from "../Component/ServiceIcon";
 import DatePicker from "react-native-date-picker";
 import moment from "moment";
+import { formatWithDots } from "../Component/SmallComponent";
 
 export default function IndiceDetail({ navigation, route }) {
   const { id } = route.params.item;
@@ -31,11 +32,11 @@ export default function IndiceDetail({ navigation, route }) {
 
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
 
   useEffect(() => {
@@ -164,7 +165,7 @@ export default function IndiceDetail({ navigation, route }) {
               {serviceName}
             </Text>
             <Text>
-              {fee} đ/{chargeBase}
+              {formatWithDots(fee.toString())} đ/{chargeBase}
             </Text>
           </View>
           <View
@@ -292,117 +293,119 @@ export default function IndiceDetail({ navigation, route }) {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "white" }}>
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <View>
-            <Text variant="headlineSmall" style={styles.txt}>
-              Ngày chốt
-            </Text>
-            <View
-              style={{
-                margin: 10,
-                marginHorizontal: 15,
-                justifyContent: "center",
-              }}
+    <View style={{ flex: 1, backgroundColor: "white" }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <View>
+          <Text variant="headlineSmall" style={styles.txt}>
+            Ngày chốt
+          </Text>
+          <View
+            style={{
+              margin: 10,
+              marginHorizontal: 15,
+              justifyContent: "center",
+            }}
+          >
+            <TouchableOpacity
+              style={{ flexDirection: "row" }}
+              onPress={() => isEditing && setOpen(true)}
+              disabled
             >
-              <TouchableOpacity
-                style={{ flexDirection: "row" }}
+              <Text style={{ fontSize: 19, top: 10 }}>
+                {datetime.toLocaleDateString("en-GB")}
+              </Text>
+              <IconButton
+                icon="calendar"
+                size={22}
                 onPress={() => isEditing && setOpen(true)}
-              >
-                <Text style={{ fontSize: 19, top: 10 }}>
-                  {datetime.toLocaleDateString("en-GB")}
-                </Text>
-                <IconButton
-                  icon="calendar"
-                  size={22}
-                  onPress={() => isEditing && setOpen(true)}
-                />
-              </TouchableOpacity>
-              <DatePicker
-                modal
-                open={open}
-                date={datetime}
-                mode={"date"}
-                locale={"vi"}
-                onConfirm={(date) => {
-                  setOpen(false);
-                  setDatetime(date);
-                }}
-                onCancel={() => {
-                  setOpen(false);
-                }}
+                disabled
               />
-            </View>
-          </View>
-          <View style={{ marginHorizontal: 10 }}>
-            <Text variant="headlineSmall" style={styles.txt}>
-              Phòng
-            </Text>
-            <Text variant="headlineSmall" style={styles.txt}>
-              {indiceData.room ? indiceData.room.name : "Lỗi hiển thị"}
-            </Text>
+            </TouchableOpacity>
+            <DatePicker
+              modal
+              open={open}
+              date={datetime}
+              mode={"date"}
+              locale={"vi"}
+              onConfirm={(date) => {
+                setOpen(false);
+                setDatetime(date);
+              }}
+              onCancel={() => {
+                setOpen(false);
+              }}
+            />
           </View>
         </View>
+        <View style={{ marginHorizontal: 10 }}>
+          <Text variant="headlineSmall" style={styles.txt}>
+            Phòng
+          </Text>
+          <Text variant="headlineSmall" style={styles.txt}>
+            {indiceData.room ? indiceData.room.name : "Lỗi hiển thị"}
+          </Text>
+        </View>
+      </View>
 
-        <Text variant="headlineSmall" style={styles.txt}>
-          Dịch vụ
-        </Text>
-        <FlatList
-          data={service}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          style={styles.flatlst}
-        />
-        {isEditing ? (
-          <Button
-            style={{
-              backgroundColor: "green",
-              width: "50%",
-              alignSelf: "center",
-              marginTop: 20,
-            }}
-            onPress={handleUpdateIndice}
-          >
-            <Text style={{ fontSize: 16, color: "white" }}>Cập nhật</Text>
-          </Button>
-        ) : null}
+      <Text variant="headlineSmall" style={styles.txt}>
+        Dịch vụ
+      </Text>
+      <FlatList
+        data={service}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        style={styles.flatlst}
+      />
+      {isEditing ? (
         <Button
           style={{
-            backgroundColor: isEditable ? "#ff3300" : "grey",
+            backgroundColor: "green",
             width: "50%",
             alignSelf: "center",
-            marginVertical: 20,
+            marginTop: 20,
           }}
-          onPress={() => setIsEditing(!isEditing)}
-          disabled={!isEditable}
+          onPress={handleUpdateIndice}
+        >
+          <Text style={{ fontSize: 16, color: "white" }}>Cập nhật</Text>
+        </Button>
+      ) : null}
+      <Button
+        style={{
+          backgroundColor: isEditable ? "#ff3300" : "grey",
+          width: "50%",
+          alignSelf: "center",
+          marginVertical: 20,
+        }}
+        onPress={() => setIsEditing(!isEditing)}
+        disabled={!isEditable}
+      >
+        <Text style={{ fontSize: 16, color: "white" }}>
+          {isEditing ? "Hủy" : "Chỉnh sửa"}
+        </Text>
+      </Button>
+      {isEditing ? null : (
+        <Button
+          style={{
+            backgroundColor: "green",
+            width: "50%",
+            alignSelf: "center",
+            marginBottom: 20,
+          }}
+          onPress={() => navigation.navigate("AddBill", { contractId })}
+          disabled={isBill}
         >
           <Text style={{ fontSize: 16, color: "white" }}>
-            {isEditing ? "Hủy" : "Chỉnh sửa"}
+            {isBill ? "Đã tạo hóa đơn" : "Tạo hóa đơn"}
           </Text>
         </Button>
-        {isEditing ? null : (
-          <Button
-            style={{
-              backgroundColor: "green",
-              width: "50%",
-              alignSelf: "center",
-              marginBottom: 20,
-            }}
-            onPress={() => navigation.navigate("AddBill", { contractId })}
-            disabled={isBill}
-          >
-            <Text style={{ fontSize: 16, color: "white" }}>{isBill? "Đã tạo hóa đơn":"Tạo hóa đơn"}</Text>
-          </Button>
-        )}
-        {/* <IconButton
+      )}
+      {/* <IconButton
             icon="plus-circle"
             size={30}
             onPress={checking}
             color="royalblue"
           /> */}
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 

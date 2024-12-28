@@ -20,6 +20,7 @@ import { login, useMyContextProvider } from "../store/index";
 import firestore from "@react-native-firebase/firestore";
 import Modal from "react-native-modal";
 import MonthYearPicker from "react-native-month-year-picker";
+import { stringToDate } from "../Component/SmallComponent";
 
 export default function Indices({ navigation, route }) {
   const [controller, dispatch] = useMyContextProvider();
@@ -31,7 +32,7 @@ export default function Indices({ navigation, route }) {
   const [enablePicker, setEnablePicker] = useState(true);
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
 
   //fetch
@@ -43,6 +44,11 @@ export default function Indices({ navigation, route }) {
         if (data.id != null) {
           arr.push(data);
         }
+      });
+      arr.sort((a, b) => {
+        const dateA = stringToDate(a.createDay);
+        const dateB = stringToDate(b.createDay);
+        return dateB - dateA; // descending
       });
       setData(arr);
       setIndicesData(arr);
@@ -131,6 +137,7 @@ export default function Indices({ navigation, route }) {
         data={indicesData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
       />
       <FAB
         icon="plus"

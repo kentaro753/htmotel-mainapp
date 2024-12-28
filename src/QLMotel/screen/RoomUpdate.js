@@ -16,7 +16,10 @@ import firestore, { query } from "@react-native-firebase/firestore";
 import ServiceIcon from "../Component/ServiceIcon";
 import ImageCropPicker from "react-native-image-crop-picker";
 import storage from "@react-native-firebase/storage";
-import { sendRenterNotification } from "../Component/SmallComponent";
+import {
+  formatWithDots,
+  sendRenterNotification,
+} from "../Component/SmallComponent";
 
 export default function RoomUpdate({ navigation, route }) {
   const { id } = route.params.item;
@@ -42,31 +45,31 @@ export default function RoomUpdate({ navigation, route }) {
   const { userLogin } = controller;
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("BILLS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
   const THUCHIS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("THUCHIS");
   const handleUpdateRoom = async () => {
     try {
@@ -147,7 +150,7 @@ export default function RoomUpdate({ navigation, route }) {
       await ROOMS.doc(id).update({
         roomName,
         price: Number(price),
-        userId: userLogin.email,
+        userId: userLogin?.email,
         mota,
         maxPeople: Number(maxPeople),
         billNote,
@@ -193,8 +196,10 @@ export default function RoomUpdate({ navigation, route }) {
 
         // Chờ tất cả ảnh được xử lý
         await Promise.all(uploadPromises);
-
         // Cập nhật danh sách ảnh lên Firestore
+        await ROOMS.doc(id).update({ images: upImage });
+      }
+      if (imageCount == 0) {
         await ROOMS.doc(id).update({ images: upImage });
       }
       const batch = firestore().batch();
@@ -346,7 +351,7 @@ export default function RoomUpdate({ navigation, route }) {
     return () => {
       loadservice();
     };
-  }, [userLogin.email, checkedServices]);
+  }, [userLogin?.email, checkedServices]);
 
   const navigateToAddContract = () => {
     navigation.navigate("AddContract", {
@@ -410,7 +415,7 @@ export default function RoomUpdate({ navigation, route }) {
             <Icon source={icon} size={50} />
             <Text>{serviceName}</Text>
             <Text>
-              {fee} đ/{chargeBase}
+              {formatWithDots(fee.toString())} đ/{chargeBase}
             </Text>
           </View>
         </TouchableOpacity>

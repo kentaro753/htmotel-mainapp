@@ -33,11 +33,11 @@ export default function RoomsNeedIndice({ navigation, route }) {
   // const [isModalVisible, setIsModalVisible] = useState(false);
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
 
   //fetch
@@ -156,6 +156,7 @@ export default function RoomsNeedIndice({ navigation, route }) {
         data={contractData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
       />
       <FAB
         icon="plus"

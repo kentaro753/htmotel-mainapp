@@ -42,7 +42,7 @@ const BieuDo = ({ navigation }) => {
         const monthsData = {};
         const THUCHIS = firestore()
           .collection("USERS")
-          .doc(userLogin.email)
+          .doc(userLogin?.email)
           .collection("THUCHIS");
         monthsArray.forEach((monthYear) => {
           monthsData[monthYear] = { income: 0, expense: 0 }; // Gán giá trị mặc định là 0

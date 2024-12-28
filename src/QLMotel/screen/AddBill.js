@@ -24,7 +24,11 @@ import messaging from "@react-native-firebase/messaging";
 import DatePicker from "react-native-date-picker";
 import MonthYearPicker from "react-native-month-year-picker";
 import moment from "moment";
-import { formatMonthYear, formatWithDots } from "../Component/SmallComponent";
+import {
+  formatMonthYear,
+  formatWithDots,
+  sendRenterNotification,
+} from "../Component/SmallComponent";
 import ProcessingOverlay from "../Component/ProcessingOverlay";
 
 export default function AddBill({ navigation, route }) {
@@ -70,29 +74,36 @@ export default function AddBill({ navigation, route }) {
   const { userLogin } = controller;
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("BILLS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
   const [serviceIndices, setServiceIndices] = useState({});
 
   const handleAddBill = async () => {
     if (isProcessing) return; // Chặn bấm nhiều lần
     setIsProcessing(true); // Hiển thị processing
+    var notification = {
+      title: "Hóa đơn mới",
+      body: `Hóa đơn tháng ${formatMonthYear(monthYear)} của phòng ${
+        selectRoom.name
+      } đã được tạo. Vui lòng kiểm tra!`,
+    };
+    var icon = "file-document-outline";
     let tempLoi = 0;
     let indiceId = "";
     const billSnapshot = await BILLS.get();
@@ -124,7 +135,7 @@ export default function AddBill({ navigation, route }) {
         };
 
         if (service.chargeType === 1) {
-          data.newValue = parseInt(currentServiceIndices.newValue, 10);
+          data.newValue = parseInt(currentServiceIndices.newValue, 10) || 0;
           data.oldValue = parseInt(currentServiceIndices.oldValue, 10) || 0;
           if (data.newValue < data.oldValue) {
             tempLoi = 1;
@@ -214,12 +225,13 @@ export default function AddBill({ navigation, route }) {
           totalPaid: sum || 0,
           thanhLy: false,
         })
-        .then((docRef) => {
-          console.log(docRef);
+        .then(async () => {
           // Gửi thông báo tới người thuê
-          sendNotification(renterId, monthYear, selectRoom.name);
+          //sendNotification(renterId, monthYear, selectRoom.name);
+          console.log(renterId, notification, icon);
+          await sendRenterNotification(renterId, notification, icon);
 
-          CONTRACTS.doc(selectRoom.contractId).update({
+          await CONTRACTS.doc(selectRoom.contractId).update({
             billMonthYear: formatMonthYear(monthYear),
             payStart: formatNextMonth(monthYear),
           });
@@ -312,24 +324,40 @@ export default function AddBill({ navigation, route }) {
               setPreviousIndice(data);
               setServiceIndices((prevState) => {
                 const updatedIndices = { ...prevState };
-                data.services.forEach((prevService) => {
-                  if (prevService.chargeType === 1) {
-                    updatedIndices[prevService.id] = {
-                      ...updatedIndices[prevService.id],
-                      oldValue: prevService.newValue,
-                      newValue: prevService.newValue,
-                    };
+                room.services.forEach((currentService) => {
+                  const matchingPrevService = data.services.find(
+                    (prevService) => prevService.id === currentService.id
+                  );
+                  if (matchingPrevService) {
+                    // Dịch vụ đã tồn tại trong chốt cũ
+                    if (matchingPrevService.chargeType === 1) {
+                      updatedIndices[currentService.id] = {
+                        ...updatedIndices[currentService.id],
+                        oldValue: matchingPrevService.newValue,
+                        newValue: matchingPrevService.newValue,
+                      };
+                    }
+                  } else {
+                    // Dịch vụ mới chưa tồn tại trong chốt cũ
+                    if (currentService.chargeType === 1) {
+                      updatedIndices[currentService.id] = {
+                        ...updatedIndices[currentService.id],
+                        oldValue: 0,
+                        newValue: 0,
+                      };
+                    }
                   }
                 });
                 return updatedIndices;
               });
             } else {
+              // Không có chốt cũ
               setServiceIndices((prevState) => {
                 const updatedIndices = { ...prevState };
-                room.services.forEach((prevService) => {
-                  if (prevService.chargeType === 1) {
-                    updatedIndices[prevService.id] = {
-                      ...updatedIndices[prevService.id],
+                room.services.forEach((currentService) => {
+                  if (currentService.chargeType === 1) {
+                    updatedIndices[currentService.id] = {
+                      ...updatedIndices[currentService.id],
                       oldValue: 0,
                       newValue: 0,
                     };
@@ -346,79 +374,52 @@ export default function AddBill({ navigation, route }) {
       return () => loadIndice();
     }
   }, [room]);
+
   const checking = async () => {
-    try {
-      const message = {
-        token: "dipHq6L7TR-RWHY_dqeLIo:APA91bFwY__6DICeuwphLg3Qu-XIKRwuwQpKtcExsLcLo94Oho-Ud2npuacQI71YG5d8OD127kiTve5LyStqx0K4aBmKYxygwBer5m-_Oewig3an1SrUvdM",
-        notification: {
-          title: "Hóa đơn mới test",
-          body: `Hóa đơn tháng  của phòng đã được tạo. Vui lòng kiểm tra!`,
-        },
-        data: {
-          loggedIn: Date.now().toString(),
-          uid: auth().currentUser.uid,
-        },
-      };
-
-      await messaging().sendMessage(message);
-      console.log("Thông báo đã được gửi thành công");
-    } catch (error) {
-      console.error("Lỗi khi gửi thông báo:", error);
-    }
-  };
-
-  const sendNotification = async (renterId, monthYear, room) => {
-    const USERS = firestore().collection("USERS");
-
-    try {
-      // Lấy thông tin người thuê từ Firestore
-      const querySnapshot = await USERS.where("renterId", "==", renterId).get();
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-        const NOTIFICATIONS = firestore()
-          .collection("USERS")
-          .doc(userData.email)
-          .collection("NOTIFICATIONS");
-        if (userData && userData.fcmToken) {
-          const fcmToken = userData.fcmToken;
-
-          // Dữ liệu thông báo
-          const notificationData = {
-            to: fcmToken, // Sử dụng FCM Token của người thuê
-            notification: {
-              title: "Hóa đơn mới",
-              body: `Hóa đơn tháng ${formatMonthYear(
-                monthYear
-              )} của phòng ${room} đã được tạo. Vui lòng kiểm tra!`,
-            },
-            // data: {
-            //   renterId,
-            //   billId,
-            // },
-          };
-
-          // Gửi thông báo qua FCM
-          await messaging().sendMessage(notificationData);
-
-          // Nếu muốn lưu thông báo vào Firestore (có thể tùy chọn)
-          await NOTIFICATIONS.add({
-            icon: "file-document-outline",
-            sender: "Chủ trọ",
-            notification: notificationData.notification,
-            timestamp: firestore.FieldValue.serverTimestamp(),
-          });
-
-          console.log("Thông báo đã được gửi");
-        } else {
-          console.error("Không tìm thấy FCM Token của người thuê");
-        }
-      } else {
-        console.error("Không tìm thấy thông tin người thuê trong Firestore");
-      }
-    } catch (error) {
-      console.error("Lỗi khi gửi thông báo:", error);
-    }
+    const doc = "servicesIcon";
+    const list = [
+      "water",
+      "water-pump",
+      "lightbulb",
+      "lightbulb-on-outline",
+      "power-plug",
+      "gas-cylinder",
+      "solar-power",
+      "bed",
+      "sofa",
+      "fridge-outline",
+      "television",
+      "washing-machine",
+      "microwave",
+      "stove",
+      "ceiling-fan",
+      "air-conditioner",
+      "fan",
+      "deskphone",
+      "iron-outline",
+      "cabinet",
+      "door",
+      "broom",
+      "mop",
+      "trash-can",
+      "tools",
+      "wrench",
+      "hammer",
+      "vacuum",
+      "wifi",
+      "router-wireless",
+      "gamepad-variant",
+      "television-classic",
+      "car-side",
+      "bicycle",
+      "bicycle-electric",
+      "motorbike",
+      "parking",
+    ];
+    const ICONS = firestore().collection("ICONS");
+    await ICONS.doc(doc).update({
+      list: firestore.FieldValue.arrayUnion(...list),
+    });
   };
   const getLastDayOfMonth = (date) => {
     const month = date.getMonth() + 1;
@@ -769,6 +770,7 @@ export default function AddBill({ navigation, route }) {
               icon="calendar"
               size={22}
               onPress={() => setOpen(true)}
+              disabled
             />
           </TouchableOpacity>
           {open && (
@@ -796,12 +798,12 @@ export default function AddBill({ navigation, route }) {
               {selectRoom.name ? selectRoom.name : "Chọn phòng"}
             </Text>
           </TouchableOpacity>
-          <IconButton
+          {/* <IconButton
             icon="plus-circle"
             size={30}
             onPress={checking}
             color="royalblue"
-          />
+          /> */}
         </View>
         <View style={{ flexDirection: "row" }}>
           <View style={{ width: "50%", alignSelf: "flex-start" }}>
@@ -812,6 +814,7 @@ export default function AddBill({ navigation, route }) {
               <TouchableOpacity
                 style={{ flexDirection: "row" }}
                 onPress={() => setStartOpen(true)}
+                disabled
               >
                 <Text style={{ fontSize: 19 }}>
                   {startDay.toLocaleDateString((locale = "vi"))}{" "}

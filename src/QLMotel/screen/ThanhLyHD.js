@@ -23,7 +23,13 @@ import ServiceIcon from "../Component/ServiceIcon";
 import DatePicker from "react-native-date-picker";
 
 import moment from "moment";
-import { dateToString, formatMonthYear, stringToDate } from "../Component/SmallComponent";
+import {
+  dateToString,
+  formatMonthYear,
+  formatWithDots,
+  sendRenterNotification,
+  stringToDate,
+} from "../Component/SmallComponent";
 
 export default function ThanLyHD({ navigation, route }) {
   const { id } = route.params || {};
@@ -38,12 +44,13 @@ export default function ThanLyHD({ navigation, route }) {
   const [indiceData, setIndiceData] = useState({});
   const [previousIndice, setPreviousIndice] = useState({});
   const [includeService, setIncludeService] = useState([]);
-  const [datetime, setDatetime] = useState(new Date());
+  const [payEnd, setPayEnd] = useState(new Date());
   const [startDay, setStartDay] = useState(new Date());
   const [startOpen, setStartOpen] = useState(false);
   const [endDay, setEndDay] = useState(new Date());
   const [endOpen, setEndOpen] = useState(false);
   const [payStart, setPayStart] = useState("");
+  const [renterId, setRenterId] = useState("");
   const [monthYear, setMonthYear] = useState(new Date());
   const [preMonthYear, setPreMonthYear] = useState("");
   const [renterCount, setRenterCount] = useState(0);
@@ -51,34 +58,40 @@ export default function ThanLyHD({ navigation, route }) {
   const [discount, setDiscount] = useState(0);
   const [sum, setSum] = useState(0);
   const [isEditing, setIsEditing] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const { userLogin } = controller;
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("RENTERS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("BILLS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
   const [serviceIndices, setServiceIndices] = useState({});
 
   const handleAddBill = async () => {
+    var notification = {
+      title: `Đã thanh lý phòng ${room.name}`,
+      body: `Hóa đơn thanh lý của phòng ${room.name} đã được tạo. Vui lòng kiểm tra!`,
+    };
+    var icon = "file-document-outline";
     let tempLoi = 0;
     let indiceId = "";
     const billSnapshot = await BILLS.get();
@@ -101,7 +114,7 @@ export default function ThanLyHD({ navigation, route }) {
       };
 
       if (service.chargeType === 1) {
-        data.newValue = parseInt(currentServiceIndices.newValue, 10);
+        data.newValue = parseInt(currentServiceIndices.newValue, 10) || 0;
         data.oldValue = parseInt(currentServiceIndices.oldValue, 10) || 0;
         if (data.newValue < data.oldValue) {
           tempLoi = 1;
@@ -122,7 +135,7 @@ export default function ThanLyHD({ navigation, route }) {
 
     if (tempLoi == 0) {
       const indiceData = {
-        createDay: datetime.toLocaleDateString("vi"),
+        createDay: new Date().toLocaleDateString("vi"),
         editable: false,
         isLast: true,
         isBill: true,
@@ -164,22 +177,23 @@ export default function ThanLyHD({ navigation, route }) {
     if (tempLoi == 0) {
       const bData = {
         contractId: room.contract || null, // Kiểm tra giá trị null hoặc undefined
-        createDay: datetime.toLocaleDateString("vi"),
+        createDay: dateToString(new Date()),
         discount: discount || 0, // Đảm bảo discount có giá trị hợp lệ
         startDay: dateToString(startDay),
         endDay: dateToString(endDay),
         payStart,
-        payEnd: dateToString(new Date()),
+        payEnd: dateToString(payEnd),
         id: billId,
         indiceId: indiceId || null,
         monthYear: formatMonthYear(monthYear),
         preMonthYear,
+        renterId,
         room: {
           id: room.id || null,
           name: room.roomName || "Chưa đặt tên",
           price: room.price || 0,
         },
-        roomCharge: calculateRoomCharge(room.price, payStart),
+        roomCharge: calculateRoomCharge(room.price, payStart, payEnd),
         servicePrice: servicePrice || 0,
         state: 0,
         totalPaid: sum || 0,
@@ -188,22 +202,23 @@ export default function ThanLyHD({ navigation, route }) {
       BILLS.doc(billId)
         .set({
           contractId: room.contract || null, // Kiểm tra giá trị null hoặc undefined
-          createDay: datetime.toLocaleDateString("vi"),
+          createDay: dateToString(new Date()),
           discount: discount || 0, // Đảm bảo discount có giá trị hợp lệ
           startDay: dateToString(startDay),
           endDay: dateToString(endDay),
           payStart,
-          payEnd: dateToString(new Date()),
+          payEnd: dateToString(payEnd),
           id: billId,
           indiceId: indiceId || null,
           monthYear: formatMonthYear(monthYear),
           preMonthYear,
+          renterId,
           room: {
             id: room.id || null,
             name: room.roomName || "Chưa đặt tên",
             price: room.price || 0,
           },
-          roomCharge: calculateRoomCharge(room.price, payStart),
+          roomCharge: calculateRoomCharge(room.price, payStart, payEnd),
           servicePrice: servicePrice || 0,
           state: 0,
           totalPaid: sum || 0,
@@ -211,11 +226,11 @@ export default function ThanLyHD({ navigation, route }) {
         })
         .then((docRef) => {
           console.log(docRef);
+          sendRenterNotification(data.renter.id, notification, icon);
           CONTRACTS.doc(id).update({
-            billMonthYear: formatMonthYear(monthYear),
-            payStart: formatNextMonth(monthYear),
+            payStart: dateToString(payEnd),
             active: false,
-            endDay: dateToString(new Date()),
+            endDay: dateToString(payEnd),
           });
           const batch = firestore().batch();
           const renterRef = RENTERS.doc(data.renter.id);
@@ -243,7 +258,7 @@ export default function ThanLyHD({ navigation, route }) {
           return batch.commit();
         })
         .then(() => {
-          Alert.alert("Tạo hóa đơn mới thành công");
+          Alert.alert("Tạo hóa đơn thanh lý thành công");
           navigation.goBack();
         })
         .catch((e) => {
@@ -257,10 +272,11 @@ export default function ThanLyHD({ navigation, route }) {
       console.log(cData);
       setData(cData);
       setPayStart(cData.payStart);
+      setRenterId(cData.renter.id);
+      if (cData.endDay != "") setPayEnd(stringToDate(cData.endDay));
       ROOMS.doc(cData.room.id).onSnapshot(
         (response) => {
           const data = response.data();
-
           const renter = data.renters ? data.renters.length : 0;
           setRoom(data);
           setService(data.services);
@@ -300,13 +316,28 @@ export default function ThanLyHD({ navigation, route }) {
               setPreviousIndice(data);
               setServiceIndices((prevState) => {
                 const updatedIndices = { ...prevState };
-                data.services.forEach((prevService) => {
-                  if (prevService.chargeType === 1) {
-                    updatedIndices[prevService.id] = {
-                      ...updatedIndices[prevService.id],
-                      oldValue: prevService.newValue,
-                      newValue: prevService.newValue,
-                    };
+                room.services.forEach((currentService) => {
+                  const matchingPrevService = data.services.find(
+                    (prevService) => prevService.id === currentService.id
+                  );
+                  if (matchingPrevService) {
+                    // Dịch vụ đã tồn tại trong chốt cũ
+                    if (matchingPrevService.chargeType === 1) {
+                      updatedIndices[currentService.id] = {
+                        ...updatedIndices[currentService.id],
+                        oldValue: matchingPrevService.newValue,
+                        newValue: matchingPrevService.newValue,
+                      };
+                    }
+                  } else {
+                    // Dịch vụ mới chưa tồn tại trong chốt cũ
+                    if (currentService.chargeType === 1) {
+                      updatedIndices[currentService.id] = {
+                        ...updatedIndices[currentService.id],
+                        oldValue: 0,
+                        newValue: 0,
+                      };
+                    }
                   }
                 });
                 return updatedIndices;
@@ -333,10 +364,12 @@ export default function ThanLyHD({ navigation, route }) {
         );
       return () => loadIndice();
     }
+    setIsLoading(false);
   }, [room]);
   const checking = () => {
     console.log(serviceIndices);
   };
+
   const getLastDayOfMonth = (date) => {
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
@@ -366,7 +399,7 @@ export default function ThanLyHD({ navigation, route }) {
               {serviceName}
             </Text>
             <Text>
-              {fee} đ/{chargeBase}
+              {formatWithDots(fee.toString())} đ/{chargeBase}
             </Text>
           </View>
           <View
@@ -490,17 +523,27 @@ export default function ThanLyHD({ navigation, route }) {
               {chargeType == 1 &&
               currentServiceIndices.newValue - currentServiceIndices.oldValue >=
                 0
-                ? (currentServiceIndices.newValue -
-                    currentServiceIndices.oldValue) *
-                  fee
+                ? formatWithDots(
+                    (
+                      (currentServiceIndices.newValue -
+                        currentServiceIndices.oldValue) *
+                      fee
+                    ).toString()
+                  )
                 : chargeType == 2
-                ? fee
+                ? stringToDate(payStart) > payEnd
+                  ? 0
+                  : formatWithDots(fee.toString())
                 : chargeType == 3
-                ? fee * renterCount
+                ? formatWithDots((fee * renterCount).toString())
                 : chargeType == 4 && currentServiceIndices.indexValue >= 0
-                ? fee * currentServiceIndices.indexValue
+                ? formatWithDots(
+                    (fee * currentServiceIndices.indexValue).toString()
+                  )
                 : chargeType == 5 && currentServiceIndices.indexValue >= 0
-                ? fee * currentServiceIndices.indexValue
+                ? formatWithDots(
+                    (fee * currentServiceIndices.indexValue).toString()
+                  )
                 : 0}{" "}
               đ
             </Text>
@@ -545,7 +588,7 @@ export default function ThanLyHD({ navigation, route }) {
         <Icon source="home-account" size={20} color="#666666" />
         {data.room?.name} - Mã hợp đồng: {id}
       </Text>
-      {stringToDate(payStart) > datetime ? (
+      {stringToDate(payStart) > payEnd ? (
         <Text style={styles.smtxt}>
           <Icon source="book-clock" size={20} color="#666666" /> Tiền phòng từ{" "}
           {data.payStart} đến {data.payStart}
@@ -553,28 +596,26 @@ export default function ThanLyHD({ navigation, route }) {
       ) : (
         <Text style={styles.smtxt}>
           <Icon source="book-clock" size={20} color="#666666" /> Tiền phòng từ{" "}
-          {data.payStart} đến {dateToString(new Date())}
+          {data.payStart} đến {payEnd.toLocaleDateString("vi")}
         </Text>
       )}
-      {stringToDate(payStart) > datetime ? (
+      {stringToDate(payStart) > payEnd ? (
         <Text style={styles.smtxt}>
-        <Icon source="book-clock" size={20} color="#666666" /> Tiền dịch vụ từ{" "}
-        {data.payStart} đến {data.payStart} và tiền điện nước (nếu
-        có) đã sử dụng trước đó
-      </Text>
+          <Icon source="book-clock" size={20} color="#666666" /> Tiền dịch vụ từ{" "}
+          {data.payStart} đến {data.payStart} và tiền điện nước (nếu có) đã sử
+          dụng trước đó
+        </Text>
       ) : (
         <Text style={styles.smtxt}>
-        <Icon source="book-clock" size={20} color="#666666" /> Tiền dịch vụ từ{" "}
-        {data.payStart} đến {dateToString(new Date())} và tiền điện nước (nếu
-        có) đã sử dụng trước đó
-      </Text>
+          <Icon source="book-clock" size={20} color="#666666" /> Tiền dịch vụ từ{" "}
+          {data.payStart} đến {payEnd.toLocaleDateString("vi")} và tiền điện
+          nước (nếu có) đã sử dụng trước đó
+        </Text>
       )}
-      
     </View>
   );
   // Tính tiền phòng dựa trên tỷ lệ sử dụng
   const calculateRoomCharge = (roomPrice, payStart, payEnd = new Date()) => {
-
     const [startDay, startMonth, startYear] = payStart.split("/").map(Number);
 
     // Ngày bắt đầu
@@ -591,10 +632,9 @@ export default function ThanLyHD({ navigation, route }) {
     const totalDaysInMonth = new Date(startYear, startMonth, 0).getDate();
     const usageRatio = daysUsed / totalDaysInMonth;
     const roomCharge = Math.ceil(roomPrice * usageRatio);
-    if(stringToDate(payStart) > payEnd) {
+    if (stringToDate(payStart) > payEnd) {
       return 0;
-    }
-    else return roomCharge;
+    } else return roomCharge;
   };
   useEffect(() => {
     console.log("Updated Month/Year:", monthYear);
@@ -623,7 +663,9 @@ export default function ThanLyHD({ navigation, route }) {
                 currentServiceIndices.oldValue) *
               item.fee
             : item.chargeType === 2
-            ? item.fee
+            ? stringToDate(payStart) > payEnd
+              ? 0
+              : item.fee
             : item.chargeType === 3
             ? currentServiceIndices.indexValue * item.fee
             : item.chargeType === 4
@@ -644,175 +686,192 @@ export default function ThanLyHD({ navigation, route }) {
       let total = 0;
 
       total =
-        servicePrice + calculateRoomCharge(room.price, payStart) - discount;
+        servicePrice +
+        calculateRoomCharge(room.price, payStart, payEnd) -
+        discount;
 
       setSum(total > 0 ? total : 0);
     };
 
     calculateTotal();
   }, [servicePrice, discount, room.price]);
-  return (
-    <ScrollView style={{ flex: 1, backgroundColor: "white" }}>
-      {renderBillInfo()}
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: "row" }}>
-          <View style={{ width: "50%", alignSelf: "flex-start" }}>
-            <Text variant="headlineSmall" style={styles.txt}>
-              Ngày thanh toán
-            </Text>
-            <View style={{ margin: 10, marginHorizontal: 15 }}>
-              <TouchableOpacity
-                style={{ flexDirection: "row" }}
-                onPress={() => setStartOpen(true)}
-              >
-                <Text style={{ fontSize: 19 }}>
-                  {startDay.toLocaleDateString((locale = "vi"))}{" "}
-                </Text>
-                <Icon source="calendar-month" size={25} />
-              </TouchableOpacity>
-            </View>
-            <DatePicker
-              title="Ngày thanh toán"
-              confirmText="Chọn"
-              cancelText="Hủy"
-              mode="date"
-              locale="vi"
-              modal
-              open={startOpen}
-              date={startDay}
-              onConfirm={(date) => {
-                setStartOpen(false);
-                setStartDay(date);
-              }}
-              onCancel={() => {
-                setStartOpen(false);
-              }}
-            />
-          </View>
-          <View style={{ width: "50%", alignSelf: "flex-end" }}>
-            <Text
-              variant="headlineSmall"
-              style={{ ...styles.txt, marginLeft: 0 }}
-            >
-              Hạn thanh toán
-            </Text>
-            <View style={{ margin: 10, marginHorizontal: 15 }}>
-              <TouchableOpacity
-                style={{ flexDirection: "row" }}
-                onPress={() => setEndOpen(true)}
-              >
-                <Text style={{ fontSize: 19 }}>
-                  {endDay.toLocaleDateString((locale = "vi"))}{" "}
-                </Text>
-                <Icon source="calendar-month" size={25} />
-              </TouchableOpacity>
-            </View>
-            <DatePicker
-              title="Hạn thanh toán"
-              confirmText="Chọn"
-              cancelText="Hủy"
-              mode="date"
-              locale="vi"
-              modal
-              open={endOpen}
-              date={endDay || new Date()}
-              onConfirm={(date) => {
-                setEndDay(date);
-                setEndOpen(false);
-              }}
-              onCancel={() => {
-                setEndOpen(false);
-              }}
-            />
-          </View>
-        </View>
-        <View style={styles.txt}>
-          <Text
-            variant="headlineSmall"
-            style={{
-              color: "#fff",
-              fontSize: 21,
-              fontWeight: "bold",
-              textShadowColor: "rgba(0, 0, 0, 0.75)",
-              textShadowOffset: { width: -1, height: 1 },
-              textShadowRadius: 10,
-              top: 2,
-            }}
-          >
-            Dịch vụ
-          </Text>
-        </View>
-        <FlatList
-          data={includeService}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          style={styles.flatlst}
-          scrollEnabled={false}
-        />
-        <Text variant="headlineSmall" style={styles.txt}>
-          Tổng hợp
-        </Text>
-        <View
-          style={{ margin: 10, marginHorizontal: 15, justifyContent: "center" }}
-        >
-          {renderDetailRow(
-            "Tiền phòng",
-            `${calculateRoomCharge(room.price, payStart) || 0} đ`
-          )}
-          {renderDetailRow("Tiền dịch vụ", `${servicePrice} đ`)}
-          <View
-            style={{ ...styles.detailRow, justifyContent: "space-between" }}
-          >
-            <View style={styles.detailLabel}>
-              <Text style={styles.detailText}>Giảm giá</Text>
-            </View>
-            <View style={{ flexDirection: "row" }}>
-              <TextInput
-                keyboardType="numeric"
-                placeholder="0"
-                underlineColor="transparent"
-                value={discount}
-                onChangeText={(text) => setDiscount(Number(text))}
-                textAlignVertical="right"
-                style={{
-                  ...styles.txtInput,
-                  backgroundColor: "#fff",
-                  height: 30,
-                  textAlign: "right",
+  if (isLoading) {
+    return <Text>đang load dữ liệu</Text>;
+  } else
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: "white" }}>
+        {renderBillInfo()}
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ width: "50%", alignSelf: "flex-start" }}>
+              <Text variant="headlineSmall" style={styles.txt}>
+                Ngày thanh toán
+              </Text>
+              <View style={{ margin: 10, marginHorizontal: 15 }}>
+                <TouchableOpacity
+                  style={{ flexDirection: "row" }}
+                  onPress={() => setStartOpen(true)}
+                  disabled
+                >
+                  <Text style={{ fontSize: 19 }}>
+                    {startDay.toLocaleDateString((locale = "vi"))}{" "}
+                  </Text>
+                  <Icon source="calendar-month" size={25} />
+                </TouchableOpacity>
+              </View>
+              <DatePicker
+                title="Ngày thanh toán"
+                confirmText="Chọn"
+                cancelText="Hủy"
+                mode="date"
+                locale="vi"
+                modal
+                open={startOpen}
+                date={startDay}
+                onConfirm={(date) => {
+                  setStartOpen(false);
+                  setStartDay(date);
+                }}
+                onCancel={() => {
+                  setStartOpen(false);
                 }}
               />
-              <Text style={styles.detailValueText}> đ</Text>
+            </View>
+            <View style={{ width: "50%", alignSelf: "flex-end" }}>
+              <Text
+                variant="headlineSmall"
+                style={{ ...styles.txt, marginLeft: 0 }}
+              >
+                Hạn thanh toán
+              </Text>
+              <View style={{ margin: 10, marginHorizontal: 15 }}>
+                <TouchableOpacity
+                  style={{ flexDirection: "row" }}
+                  onPress={() => setEndOpen(true)}
+                >
+                  <Text style={{ fontSize: 19 }}>
+                    {endDay.toLocaleDateString((locale = "vi"))}{" "}
+                  </Text>
+                  <Icon source="calendar-month" size={25} />
+                </TouchableOpacity>
+              </View>
+              <DatePicker
+                title="Hạn thanh toán"
+                confirmText="Chọn"
+                cancelText="Hủy"
+                mode="date"
+                locale="vi"
+                modal
+                open={endOpen}
+                date={endDay || new Date()}
+                onConfirm={(date) => {
+                  setEndDay(date);
+                  setEndOpen(false);
+                }}
+                onCancel={() => {
+                  setEndOpen(false);
+                }}
+              />
             </View>
           </View>
-          <View style={styles.detailRow}>
-            <View style={styles.detailLabel}>
-              <Text style={{ ...styles.detailText, color: "red" }}>
-                Tổng tiền
-              </Text>
-            </View>
-            <View style={styles.detailValue}>
-              <Text style={{ ...styles.detailValueText, color: "red" }}>
-                {sum} đ
-              </Text>
-            </View>
+          <View style={styles.txt}>
+            <Text
+              variant="headlineSmall"
+              style={{
+                color: "#fff",
+                fontSize: 21,
+                fontWeight: "bold",
+                textShadowColor: "rgba(0, 0, 0, 0.75)",
+                textShadowOffset: { width: -1, height: 1 },
+                textShadowRadius: 10,
+                top: 2,
+              }}
+            >
+              Dịch vụ
+            </Text>
           </View>
-        </View>
-        <Button
-          style={{
-            backgroundColor: "#ff3300",
-            width: "50%",
-            alignSelf: "center",
-            marginVertical: 20,
-          }}
-          onPress={handleAddBill}
-        >
-          <Text style={{ color: "white", fontWeight: "bold" }}>
-            Tạo hóa đơn
+          <FlatList
+            data={includeService}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            style={styles.flatlst}
+            scrollEnabled={false}
+          />
+          <Text variant="headlineSmall" style={styles.txt}>
+            Tổng hợp
           </Text>
-        </Button>
-      </View>
-    </ScrollView>
-  );
+          <View
+            style={{
+              margin: 10,
+              marginHorizontal: 15,
+              justifyContent: "center",
+            }}
+          >
+            {renderDetailRow(
+              "Tiền phòng",
+              `${
+                formatWithDots(
+                  calculateRoomCharge(room.price, payStart, payEnd).toString()
+                ) || 0
+              } đ`
+            )}
+            {renderDetailRow(
+              "Tiền dịch vụ",
+              `${formatWithDots(servicePrice.toString())} đ`
+            )}
+            <View
+              style={{ ...styles.detailRow, justifyContent: "space-between" }}
+            >
+              <View style={styles.detailLabel}>
+                <Text style={styles.detailText}>Giảm giá</Text>
+              </View>
+              <View style={{ flexDirection: "row" }}>
+                <TextInput
+                  keyboardType="numeric"
+                  placeholder="0"
+                  underlineColor="transparent"
+                  value={discount}
+                  onChangeText={(text) => setDiscount(Number(text))}
+                  textAlignVertical="right"
+                  style={{
+                    ...styles.txtInput,
+                    backgroundColor: "#fff",
+                    height: 30,
+                    textAlign: "right",
+                  }}
+                />
+                <Text style={styles.detailValueText}> đ</Text>
+              </View>
+            </View>
+            <View style={styles.detailRow}>
+              <View style={styles.detailLabel}>
+                <Text style={{ ...styles.detailText, color: "red" }}>
+                  Tổng tiền
+                </Text>
+              </View>
+              <View style={styles.detailValue}>
+                <Text style={{ ...styles.detailValueText, color: "red" }}>
+                  {formatWithDots(sum.toString())} đ
+                </Text>
+              </View>
+            </View>
+          </View>
+          <Button
+            style={{
+              backgroundColor: "#ff3300",
+              width: "50%",
+              alignSelf: "center",
+              marginVertical: 20,
+            }}
+            onPress={handleAddBill}
+          >
+            <Text style={{ color: "white", fontWeight: "bold" }}>
+              Tạo hóa đơn
+            </Text>
+          </Button>
+        </View>
+      </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({

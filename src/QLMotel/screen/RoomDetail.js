@@ -49,15 +49,15 @@ export default function RoomDetail({ navigation, route }) {
 
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("RENTERS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
 
   const handleDeleteRoom = () => {
@@ -186,7 +186,7 @@ export default function RoomDetail({ navigation, route }) {
     return () => {
       loadservice();
     };
-  }, [userLogin.email, checkedServices]);
+  }, [userLogin?.email, checkedServices]);
 
   const navigateToAddContract = () => {
     navigation.navigate("AddContract", {
@@ -401,17 +401,23 @@ export default function RoomDetail({ navigation, route }) {
         <View>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.modalContent}>
-              {renterList.map((item, index) => (
-                <RenterInclude
-                  key={index}
-                  item={item}
-                  type="view"
-                  onSelect={() => {
-                    toggleModal();
-                    navigation.navigate("RenterDetail", { item: item });
-                  }}
-                />
-              ))}
+              {renterList.length != 0 ? (
+                renterList.map((item, index) => (
+                  <RenterInclude
+                    key={index}
+                    item={item}
+                    type="view"
+                    onSelect={() => {
+                      toggleModal();
+                      navigation.navigate("RenterDetail", { item: item });
+                    }}
+                  />
+                ))
+              ) : (
+                <Text style={{ color: "#000", fontSize: 20 }}>
+                  Chưa thêm người thuê vào
+                </Text>
+              )}
             </View>
           </ScrollView>
           <Button
@@ -423,8 +429,8 @@ export default function RoomDetail({ navigation, route }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>

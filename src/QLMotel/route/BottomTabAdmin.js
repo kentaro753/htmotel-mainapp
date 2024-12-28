@@ -1,16 +1,12 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import React from "react";
+import React, { useEffect } from "react";
 import Home from "../screen/Home";
 import Setting from "../screen/Setting";
 import { Icon } from "react-native-paper";
-import Login from "../screen/Login";
 import TTabRoom from "./TTabRoom";
 import TTabBill from "./TTabBill";
-import { useMyContextProvider } from "../store/index";
-import Rooms from "../screen/Rooms";
-import Bills from "../screen/Bills";
-import ChatScreen from "../screen/ChatScreen";
-import { View } from "react-native";
+import { logout, useMyContextProvider } from "../store/index";
+import { Alert, View } from "react-native";
 import Messages from "../screen/Messages";
 const Tab = createBottomTabNavigator();
 
@@ -67,7 +63,7 @@ export default function () {
         name="Messages"
         component={Messages}
         options={{
-          headerTitle: "Nhắn tin",
+          headerTitle: "Danh sách liên hệ",
           tabBarLabel: "Nhắn tin",
           tabBarIcon: ({ color, size, focused }) => (
             <View
@@ -100,7 +96,6 @@ export default function () {
             </View>
           ),
           tabBarLabelStyle: { fontSize: 13 },
-
         }}
       />
       <Tab.Screen

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Image, StyleSheet, View } from "react-native";
-import { Button, IconButton, Text, TextInput } from "react-native-paper";
+import { Alert, Image, StyleSheet, Text, View } from "react-native";
+import { Button, IconButton, TextInput } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { useMyContextProvider } from "../store/index";
 import { TouchableOpacity } from "react-native";
@@ -19,7 +19,7 @@ export default function ChangeInfo({ navigation }) {
   useEffect(() => {
     if (userLogin == null) navigation.navigate("Login");
     else {
-      USERS.doc(userLogin.email).onSnapshot((response) => {
+      USERS.doc(userLogin?.email).onSnapshot((response) => {
         const data = response.data();
         setFullName(data.fullName);
         setPhone(data.phone);
@@ -43,33 +43,51 @@ export default function ChangeInfo({ navigation }) {
   };
 
   const handleChangeInfo = () => {
-    USERS.doc(userLogin.email)
-      .update({ fullName: fullName, phone: phone })
-      .then(() => {
-        const refImage = storage().ref("/images/" + userLogin.email + ".jpg");
-        if (avatar != "") {
-          refImage
-            .putFile(avatar)
-            .then(() => {
-              refImage
-                .getDownloadURL()
-                .then((link) =>
-                  USERS.doc(userLogin.email).update({ avatar: link })
-                );
-            })
-            .catch((e) => console.log(e.message));
-        }
-        USERS.doc(userLogin.email).onSnapshot(async (u) => {
-          if (u.exists) {
-            const userData = u.data();
-            await AsyncStorage.setItem("user", JSON.stringify(userData));
-            dispatch({ type: "USER_LOGIN", value: userData });
+    if (fullName === "") {
+      Alert.alert("Họ tên không được bỏ trống!");
+    } else if (phone === "") {
+      Alert.alert("Số điện thoại không được bỏ trống!");
+    } else {
+      USERS.doc(userLogin?.email)
+        .update({ fullName: fullName, phone: phone })
+        .then(() => {
+          if (userLogin?.role == "renter") {
+            const RENTERS = firestore()
+              .collection("USERS")
+              .doc(userLogin?.admin)
+              .collection("RENTERS");
+            RENTERS.doc(userLogin?.renterId).update({
+              fullName: fullName,
+              phone: phone,
+            });
           }
-        });
-        Alert.alert("Change Info success");
-        navigation.goBack();
-      })
-      .catch((e) => Alert.alert(e.message));
+          const refImage = storage().ref(
+            "/images/" + userLogin?.email + ".jpg"
+          );
+          if (avatar != "") {
+            refImage
+              .putFile(avatar)
+              .then(() => {
+                refImage
+                  .getDownloadURL()
+                  .then((link) =>
+                    USERS.doc(userLogin?.email).update({ avatar: link })
+                  );
+              })
+              .catch((e) => console.log(e.message));
+          }
+          USERS.doc(userLogin?.email).onSnapshot(async (u) => {
+            if (u.exists) {
+              const userData = u.data();
+              await AsyncStorage.setItem("user", JSON.stringify(userData));
+              dispatch({ type: "USER_LOGIN", value: userData });
+            }
+          });
+          Alert.alert("Change Info success");
+          navigation.goBack();
+        })
+        .catch((e) => Alert.alert(e.message));
+    }
   };
 
   return (
@@ -106,7 +124,7 @@ export default function ChangeInfo({ navigation }) {
             style={{
               height: "50%",
               alignItems: "center",
-              aspectRatio:1,
+              aspectRatio: 1,
               borderWidth: 1,
               borderRadius: 1000,
               overflow: "hidden",
@@ -129,23 +147,30 @@ export default function ChangeInfo({ navigation }) {
         placeholder={"Họ và tên"}
         value={fullName}
         onChangeText={setFullName}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
       />
       <TextInput
         keyboardType="numeric"
         placeholder={"Số điện thoại"}
         value={phone}
         onChangeText={setPhone}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
         maxLength={10}
       />
       <Button
-        textColor="#000"
-        style={{ marginTop: 5, padding: 5, backgroundColor: "#ff944d" }}
+        textColor="#fff"
+        style={{
+          marginVertical: 10,
+          padding: 5,
+          backgroundColor: "#ff6600",
+          borderRadius: 3,
+        }}
         mode="contained"
         onPress={handleChangeInfo}
       >
-        Lưu thông tin người dùng
+        <Text style={{ fontSize: 18 }}>Lưu thông tin người dùng</Text>
       </Button>
     </View>
   );

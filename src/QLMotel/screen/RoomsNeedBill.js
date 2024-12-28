@@ -33,11 +33,11 @@ export default function RoomsNeedBill({ navigation, route }) {
   // const [isModalVisible, setIsModalVisible] = useState(false);
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
 
   //fetch
@@ -62,7 +62,8 @@ export default function RoomsNeedBill({ navigation, route }) {
           route.params.monthYear,
           s.chuki,
           s.billMonthYear,
-          s.payStart
+          s.payStart,
+          s.endDay
         )
       )
     );
@@ -99,18 +100,27 @@ export default function RoomsNeedBill({ navigation, route }) {
     const year = date.getFullYear();
     return `${month}/${year}`;
   };
-  const checkMonthYear = (date, chuki, billMonthYear, payStart) => {
-    if (billMonthYear == "") {
-      const monthdate = date.getMonth();
-      const monthPayStart = stringToDate(payStart).getMonth();
-      if (monthdate >= monthPayStart) {
+  const checkMonthYear = (date, chuki, billMonthYear, payStart, endDay) => {
+    const billDate = stringToMonthYear(billMonthYear);
+    const nextBillDate = moment(billDate).add(chuki, "months").toDate();
+
+    if (endDay != "") {
+      const endDate = stringToDate(endDay);
+      const endMonthYear = stringToMonthYear(endDate);
+      console.log(nextBillDate, endMonthYear);
+      if (nextBillDate < endMonthYear) {
         return true;
       } else return false;
     }
-    const billDate = stringToMonthYear(billMonthYear);
-    console.log(date, billDate);
-    const nextBillDate = moment(billDate).add(chuki, "months").toDate();
-    console.log(nextBillDate);
+
+    if (billMonthYear == "") {
+      const monthdate = date.getMonth();
+      console.log(monthdate);
+      const monthPayStart = stringToDate(payStart).getMonth();
+      if (monthdate == monthPayStart) {
+        return true;
+      } else return false;
+    }
     return date >= nextBillDate;
   };
   return (
@@ -165,6 +175,7 @@ export default function RoomsNeedBill({ navigation, route }) {
         data={contractData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
       />
       <FAB
         icon="plus"

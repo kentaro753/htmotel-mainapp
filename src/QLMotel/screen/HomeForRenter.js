@@ -31,33 +31,32 @@ export default function HomeForRenter({ navigation }) {
   }, [userLogin]);
 
   useEffect(() => {
-    if (userLogin != null && userLogin.role == "renter") {
-      USERS.doc(userLogin.admin).onSnapshot((doc) => {
+    if (userLogin != null) {
+      console.log(userLogin?.renterId);
+      USERS.doc(userLogin?.admin).onSnapshot((doc) => {
         const data = doc.data();
         setPhone(data.phone);
       });
       const BILLS = firestore()
         .collection("USERS")
-        .doc(userLogin.admin)
+        .doc(userLogin?.admin)
         .collection("BILLS");
       const RENTERS = firestore()
         .collection("USERS")
-        .doc(userLogin.admin)
+        .doc(userLogin?.admin)
         .collection("RENTERS");
-      const loadbill = BILLS.where("renterId", "==", userLogin?.renterId)
-        .where("state", "==", 0)
-        .onSnapshot((response) => {
-          var arr = [];
-          response.forEach((doc) => {
-            const data = doc.data();
-            if (data.id != null) {
-              arr.push(data);
-            }
-          });
-          arr.sort((a, b) => stringToDate(a.endDay) - stringToDate(b.endDay));
-          setBillsData(arr);
+      const loadbill = BILLS.where("state", "!=", 2).onSnapshot((response) => {
+        const arr = [];
+        response.forEach((doc) => {
+          const data = doc.data();
+          if (data.id != null && data.renterId == userLogin?.renterId) {
+            arr.push(data);
+          }
         });
-      const loadroom = RENTERS.doc(userLogin.renterId).onSnapshot((renter) => {
+        arr.sort((a, b) => stringToDate(a.endDay) - stringToDate(b.endDay));
+        setBillsData(arr);
+      });
+      const loadroom = RENTERS.doc(userLogin?.renterId).onSnapshot((renter) => {
         const data = renter.data();
         if (data.contracts.length == 1) {
           setContractId(data.contracts[0]);
@@ -65,20 +64,11 @@ export default function HomeForRenter({ navigation }) {
         setRooms(data.contracts.length);
       });
       return () => {
-        loadbill();
+        if (userLogin?.renterId && userLogin?.admin) loadbill();
         loadroom();
       };
     }
-  }, [userLogin]);
-
-  // useEffect(() => {
-  //   const roomCount = roomData ? roomData.length : 0;
-  //   const emptyroomCount = emptyRoomData ? emptyRoomData.length : 0;
-  //   const renterCount = renterData ? renterData.length : 0;
-  //   setEmptyRooms(emptyroomCount);
-  //   setRooms(roomCount);
-  //   setRenters(renterCount);
-  // }, [renterData, roomData, emptyRoomData]);
+  }, []);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "white" }}>
@@ -95,59 +85,20 @@ export default function HomeForRenter({ navigation }) {
           variant="displaySmall"
           style={{ marginLeft: 10, color: "white", fontSize: 20 }}
         >
-          {userLogin !== null && userLogin.fullName
-            ? userLogin.fullName.toUpperCase()
+          {userLogin !== null && userLogin?.fullName
+            ? userLogin?.fullName.toUpperCase()
             : ""}
         </Text>
         <View style={{ flexDirection: "row" }}>
-          {/* <IconButton
-            icon="account-circle"
-            size={35}
-            style={{ marginEnd: 0, width: 40 }}
-            iconColor="white"
-            onPress={() => navigation.navigate("Profile")}
-          /> */}
           <IconButton
             icon="bell-outline"
             size={35}
             iconColor="white"
             style={{ marginStart: 0, width: 40 }}
             onPress={() => navigation.navigate("Notice")}
-            // onPress={() => Alert.alert("Chưa được thực hiện!")}
           />
         </View>
       </View>
-
-      {/* <View
-        style={{
-          ...styles.viewBox,
-          flexDirection: "row",
-          marginHorizontal: 20,
-          marginVertical: 10,
-          paddingVertical: 30,
-          borderRadius: 1,
-          borderTopRightRadius: 14,
-          borderTopLeftRadius: 14,
-          borderBottomRightRadius: 14,
-          borderBottomLeftRadius: 13.9,
-          flexWrap: "wrap",
-        }}
-      >
-        <Text
-          style={{
-            position: "absolute",
-            left: 14,
-            top: -7,
-            backgroundColor: "white",
-            fontSize: 20,
-            fontWeight: "bold",
-            paddingHorizontal: 5,
-          }}
-        >
-          Chốt dịch vụ gần nhất
-        </Text>
-        <Text style={{ marginBottom: 20, marginTop: 5, color: "#999999" }}>Chưa có chốt dịch vụ</Text>
-      </View> */}
       <View
         style={{
           ...styles.viewBox,
@@ -155,8 +106,8 @@ export default function HomeForRenter({ navigation }) {
           marginHorizontal: 20,
           marginVertical: 10,
           borderRadius: 1,
-          borderTopRightRadius: 14,
-          borderTopLeftRadius: 14,
+          borderTopRightRadius: 20,
+          borderTopLeftRadius: 19,
           borderBottomRightRadius: 20,
           borderBottomLeftRadius: 20,
           paddingVertical: 30,
@@ -215,8 +166,9 @@ export default function HomeForRenter({ navigation }) {
           style={styles.btn}
           onPress={() =>
             navigation.navigate("ChatScreen", {
-              id: userLogin.admin + "_" + userLogin.email,
+              id: userLogin?.admin + "_" + userLogin?.email,
               phone: phone,
+              fullName: "Chủ trọ",
             })
           }
         >
@@ -241,6 +193,8 @@ export default function HomeForRenter({ navigation }) {
           borderRadius: 1,
           borderTopRightRadius: 20,
           borderTopLeftRadius: 20,
+          borderBottomRightRadius: 20,
+          borderBottomLeftRadius: 19,
         }}
       >
         <Text

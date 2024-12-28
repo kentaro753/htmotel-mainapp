@@ -13,7 +13,7 @@ const RoomSelect = ({ item, onSelect }) => {
   const canAdd = item.maxPeople - renterCount > 0;
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
   useEffect(() => {
     const loadContract = CONTRACTS.doc(contractId).onSnapshot((response) => {

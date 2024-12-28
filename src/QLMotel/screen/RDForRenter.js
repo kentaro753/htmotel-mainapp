@@ -15,6 +15,7 @@ import firestore from "@react-native-firebase/firestore";
 import Slideshow from "react-native-image-slider-show";
 import RenterInclude from "../Component/RenterInclude";
 import ServiceIcon from "../Component/ServiceIcon";
+import { sendAdminNotification } from "../Component/SmallComponent";
 
 export default function RDForRenter({ navigation, route }) {
   const { id } = route.params;
@@ -42,35 +43,46 @@ export default function RDForRenter({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("BILLS");
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("INDICES");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("CONTRACTS");
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("ROOMS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("RENTERS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("SERVICES");
   const handleSendRequest = () => {
+    var notification = {
+      title: "Yêu cầu dịch vụ",
+      body: `Người thuê của phòng ${roomName} đã gửi yêu cầu dịch vụ. Vui lòng kiểm tra!`,
+    };
+    var icon = "lightbulb-variant";
     ROOMS.doc(room.id)
       .update({
         requests: requestService,
       })
       .then(() => {
         setSendable(false);
+        sendAdminNotification(
+          userLogin?.renterId,
+          notification,
+          icon,
+          userLogin?.admin
+        );
         toggleServiceModal();
         Alert.alert("Thông báo", "Gửi yêu cầu thành công!");
       })
@@ -443,9 +455,15 @@ export default function RDForRenter({ navigation, route }) {
           <View>
             <ScrollView contentContainerStyle={styles.scrollViewContent}>
               <View style={styles.modalContent}>
-                {renterList.map((item, index) => (
-                  <RenterInclude key={index} item={item} type="view" />
-                ))}
+                {renterList.length != 0 ? (
+                  renterList.map((item, index) => (
+                    <RenterInclude key={index} item={item} type="view" />
+                  ))
+                ) : (
+                  <Text style={{ color: "#000", fontSize: 20 }}>
+                    Chưa thêm người thuê vào
+                  </Text>
+                )}
               </View>
               <Button
                 onPress={toggleRenterModal}

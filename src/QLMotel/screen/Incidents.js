@@ -19,23 +19,25 @@ export default function Incidents({ navigation }) {
   const [title, setTitle] = useState("");
   const INCIDENTS = firestore()
     .collection("USERS")
-    .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
     .collection("INCIDENTS");
   //fetch
   useEffect(() => {
-    INCIDENTS.where("isFixed", "==", false).onSnapshot((response) => {
-      var arr = [];
-      response.forEach((doc) => {
-        doc.data().id != null && arr.push(doc.data());
-      });
-      // Sau đó sắp xếp theo datetime từ mới nhất đến cũ nhất
-      arr.sort((a, b) => b.datetime.seconds - a.datetime.seconds);
-      // Sắp xếp mảng theo level giảm dần
-      arr.sort((a, b) => b.level - a.level);
-
-      setData(arr);
-      setIncidentData(arr);
-    });
+    const loadincident = INCIDENTS.where("isFixed", "==", false).onSnapshot(
+      (response) => {
+        var arr = [];
+        response.forEach((doc) => {
+          doc.data().id != null && arr.push(doc.data());
+        });
+        arr.sort((a, b) => b.datetime.seconds - a.datetime.seconds);
+        arr.sort((a, b) => b.level - a.level);
+        setData(arr);
+        setIncidentData(arr);
+      }
+    );
+    return () => {
+      loadincident();
+    };
   }, []);
   useEffect(() => {
     setIncidentData(data.filter((s) => s.title.includes(title)));
@@ -46,7 +48,6 @@ export default function Incidents({ navigation }) {
       datetime instanceof firestore.Timestamp
         ? datetime.toDate() // Chuyển Timestamp thành đối tượng Date
         : new Date(datetime); // Nếu không phải Timestamp thì chuyển sang Date
-
     const formatDate = new Intl.DateTimeFormat("vi-VN", {
       day: "2-digit",
       month: "2-digit",
@@ -113,6 +114,7 @@ export default function Incidents({ navigation }) {
         data={incidentData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
       />
       <FAB
         icon="plus"

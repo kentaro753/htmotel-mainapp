@@ -81,7 +81,7 @@ export default function () {
         name="Setting"
         component={Setting}
         options={{
-          headerShown: false,
+          headerTitle: "Cài đặt",
           tabBarLabel: "Cài đặt",
           tabBarIcon: ({ color, size, focused }) => (
             <Icon
@@ -91,6 +91,8 @@ export default function () {
             />
           ),
           tabBarLabelStyle: { fontSize: 13 },
+          headerStyle: { backgroundColor: "#fff" },
+          headerTitleStyle: { alignSelf: "center", color: "#ff3300" },
         }}
       />
     </Tab.Navigator>

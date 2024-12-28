@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text, Button } from "react-native-paper";
-import { logout, useMyContextProvider } from "../store/index";
+import {
+  checkResetPassword,
+  logout,
+  useMyContextProvider,
+} from "../store/index";
 import firestore from "@react-native-firebase/firestore";
 import { Avatar } from "react-native-paper";
 import { Image } from "react-native";
@@ -13,21 +17,22 @@ export default function Setting({ navigation }) {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const USER = firestore().collection("USERS");
-  const onLogout = () => {
-    logout(dispatch);
-    navigation.reset({
+  const onLogout = async () => {
+    await logout(dispatch, userLogin?.email);
+    await navigation.reset({
       index: 0,
       routes: [{ name: "Login" }],
     });
   };
   //console.log(userLogin);
-  // console.log(userLogin.fullname);
+  // console.log(userLogin?.fullname);
   useEffect(() => {
     if (!userLogin) {
       navigation.navigate("Login");
     } else {
-      console.log(userLogin);
-      USER.doc(userLogin.email).onSnapshot((response) => {
+      //console.log(userLogin);
+      checkResetPassword(dispatch, userLogin?.email, userLogin?.password);
+      USER.doc(userLogin?.email).onSnapshot((response) => {
         const data = response.data();
         setFullName(data.fullName);
         setPhone(data.phone);
@@ -55,7 +60,7 @@ export default function Setting({ navigation }) {
                 {phone}
               </Text>
               <Text style={{ ...styles.txt, fontSize: 16, color: "#8c8c8c" }}>
-                {userLogin.email}
+                {userLogin?.email}
               </Text>
             </View>
           </View>
@@ -108,7 +113,7 @@ export default function Setting({ navigation }) {
               Thêm
             </Text>
           </View>
-          {userLogin.role == "admin" && (
+          {userLogin?.role == "admin" && (
             <TouchableOpacity style={styles.btn}>
               <Text
                 style={styles.Optiontxt}
@@ -120,15 +125,9 @@ export default function Setting({ navigation }) {
           )}
           <TouchableOpacity
             style={styles.btn}
-            //onPress={() => navigation.navigate("ChangePass")}
+            onPress={() => navigation.navigate("Gioithieu")}
           >
-            <Text style={styles.Optiontxt}>Điều khoản và chính sách</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            //onPress={onLogout}
-            style={styles.btn}
-          >
-            <Text style={styles.Optiontxt}>Hỗ trợ khách hàng</Text>
+            <Text style={styles.Optiontxt}>Thông tin về ứng dụng</Text>
           </TouchableOpacity>
         </View>
       ) : null}

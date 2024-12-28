@@ -22,15 +22,15 @@ export default function ThuGroup({ navigation, route }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const TCGROUPS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("TCGROUPS");
 
   const formatWithDots = (text) => {

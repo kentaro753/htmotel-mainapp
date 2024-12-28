@@ -19,44 +19,55 @@ export default function Messages({ navigation }) {
   const [data, setData] = useState([]);
   const [renterData, setRenterData] = useState([]);
   const [name, setName] = useState("");
-  const RENTERS = firestore()
-    .collection("USERS")
-    .doc(userLogin.email)
-    .collection("RENTERS");
 
   //fetch
   useEffect(() => {
-    RENTERS.onSnapshot((response) => {
-      var arr = [];
-      response.forEach((doc) => {
-        const data = doc.data();
-        if (data.id != null && data.account) {
-          const USER = firestore().collection("USERS");
-          USER.doc(data.email).onSnapshot((response) => {
-            const udata = response.data();
-            arr.push({ ...data, avatar: udata?.avatar || "" });
-          });
-        }
+    if (userLogin) {
+      const RENTERS = firestore()
+        .collection("USERS")
+        .doc(userLogin?.email)
+        .collection("RENTERS");
+      RENTERS.onSnapshot((response) => {
+        var arr = [];
+        response.forEach((doc) => {
+          const data = doc.data();
+          if (data.id != null && data.account) {
+            const USER = firestore().collection("USERS");
+            USER.doc(data.email).onSnapshot((response) => {
+              const udata = response.data();
+              arr.push({ ...data, avatar: udata?.avatar || "" });
+            });
+          }
+        });
+        setData(arr);
+        setRenterData(arr);
       });
-      setData(arr);
-      setRenterData(arr);
-    });
+    }
   }, []);
   useEffect(() => {
     setRenterData(
       data.filter(
-        (s) => s.fullName.includes(name) || s.room.name.includes(name) || s.phone.includes(name)
+        (s) =>
+          s.fullName.includes(name) ||
+          s.room.name.includes(name) ||
+          s.phone.includes(name)
       )
     );
   }, [name]);
 
   const renderItem = ({ item }) => {
-    const { fullName, phone, avatar, id,email } = item;
-    //console.log(userLogin.email + "_" + id)
+    const { fullName, phone, avatar, id, email } = item;
+    //console.log(userLogin?.email + "_" + id)
     return (
       <TouchableOpacity
         style={styles.roomitem}
-        onPress={() => navigation.navigate("ChatScreen", { id: userLogin.email + "_" + email, phone: phone})}
+        onPress={() =>
+          navigation.navigate("ChatScreen", {
+            id: userLogin?.email + "_" + email,
+            phone: phone,
+            fullName: fullName,
+          })
+        }
       >
         <Avatar.Image
           borderWidth={0.5}

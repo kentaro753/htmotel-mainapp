@@ -13,6 +13,11 @@ import { useMyContextProvider } from "../store/index";
 import firestore from "@react-native-firebase/firestore";
 import DatePicker from "react-native-date-picker";
 import moment from "moment";
+import {
+  dateToString,
+  formatWithDots,
+  stringToDate,
+} from "../Component/SmallComponent";
 
 export default function UpdateBill({ navigation, route }) {
   const { id } = route.params;
@@ -34,26 +39,38 @@ export default function UpdateBill({ navigation, route }) {
   const { userLogin } = controller;
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("BILLS");
   const [serviceIndices, setServiceIndices] = useState({});
 
   const handleUpdateBill = () => {
+    const currentDate = new Date();
+    const [endDate, endMonth, endYear] = dateToString(endDay)
+      .split("/")
+      .map(Number);
+    const dueDate = new Date(endYear, endMonth - 1, endDate);
+    var state = 0;
+    if (currentDate > dueDate) {
+      state = 1;
+    } else {
+      state = 0;
+    }
     BILLS.doc(id)
       .update({
         discount: discount || 0,
         startDay: dateToString(startDay),
         endDay: dateToString(endDay),
         totalPaid: sum || 0,
-        userId: userLogin.email,
+        userId: userLogin?.email,
+        state: state,
       })
       .then(() => {
         Alert.alert("Cập nhật hóa đơn thành công");
@@ -99,10 +116,6 @@ export default function UpdateBill({ navigation, route }) {
       return () => loadIndice();
     }
   }, [data]);
-
-  const stringToDate = (dateString) => {
-    return moment(dateString, "DD/MM/YYYY").toDate();
-  };
   const handleInputChange = (serviceId, key, value) => {
     setServiceIndices((prevState) => ({
       ...prevState,
@@ -112,10 +125,7 @@ export default function UpdateBill({ navigation, route }) {
       },
     }));
   };
-  const formatWithDots = (text) => {
-    let numericText = text.replace(/\D/g, "");
-    return numericText.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
+
   const renderBillInfo = () => (
     <View style={styles.contractInfo}>
       <View style={styles.detailRow}>
@@ -317,12 +327,7 @@ export default function UpdateBill({ navigation, route }) {
       </View>
     </View>
   );
-  const dateToString = (date) => {
-    if (!date) {
-      return "";
-    }
-    return moment(date).format("DD/MM/YYYY");
-  };
+
   useEffect(() => {
     console.log("Updated Month/Year:", monthYear);
   }, [monthYear]);
@@ -362,6 +367,7 @@ export default function UpdateBill({ navigation, route }) {
                 <TouchableOpacity
                   style={{ flexDirection: "row" }}
                   onPress={() => setStartOpen(true)}
+                  disabled
                 >
                   <Text style={{ fontSize: 19 }}>
                     {startDay.toLocaleDateString((locale = "vi"))}{" "}

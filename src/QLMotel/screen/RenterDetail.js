@@ -12,7 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { Avatar, Button, IconButton, Text } from "react-native-paper";
-import { useMyContextProvider } from "../store/index";
+import { deleteAccountRenter, useMyContextProvider } from "../store/index";
 import storage from "@react-native-firebase/storage";
 import firestore from "@react-native-firebase/firestore";
 import PanPinImage from "../Component/PanPinImage";
@@ -38,11 +38,15 @@ export default function RenterDetail({ navigation, route }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const { userLogin } = controller;
+  const ROOMS = firestore()
+    .collection("USERS")
+    .doc(userLogin?.email)
+    .collection("ROOMS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("RENTERS");
-  const handleDeleteThuChi = () => {
+  const handleThanhLyRenter = () => {
     Alert.alert(
       "Xác nhận",
       "Bạn có chắc muốn thanh lý người thuê này không?",
@@ -56,7 +60,7 @@ export default function RenterDetail({ navigation, route }) {
           text: "Có",
           onPress: async () => {
             try {
-              if (renter.contract.length === 0) {
+              if (renter.contracts.length === 0) {
                 // Xóa ảnh trên Firebase Storage
                 const deleteImages = async () => {
                   const deletePromises = [];
@@ -75,13 +79,29 @@ export default function RenterDetail({ navigation, route }) {
                   }
                   await Promise.all(deletePromises);
                 };
-
-                await deleteImages();
-
+                if (account) {
+                  await RENTERS.doc(id).update({ account: false });
+                  await deleteImages();
+                  await deleteAccountRenter(email, userLogin?.email, id);
+                }
                 // Xóa dữ liệu giao dịch trên Firestore
-                await RENTERS.doc(id).update({ active: false, account:false });
+                if (room.id == "") {
+                  await RENTERS.doc(id).update({
+                    active: false,
+                    images: [],
+                  });
+                } else {
+                  await ROOMS.doc(room.id).update({
+                    renters: firestore.FieldValue.arrayRemove(id),
+                  });
+                  await RENTERS.doc(id).update({
+                    active: false,
+                    room: { contract: "", id: "", name: "" },
+                    images: [],
+                  });
+                }
+                await setAccount(false);
                 console.log("Người thuê thanh lý successfully");
-
                 navigation.goBack();
               } else {
                 Alert.alert(
@@ -91,7 +111,36 @@ export default function RenterDetail({ navigation, route }) {
               }
             } catch (error) {
               console.error("Delete failed:", error.message);
-              Alert.alert("Lỗi", "Xóa giao dịch thất bại: " + error.message);
+              Alert.alert("Lỗi", "Thanh lý thất bại: " + error.message);
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+  const handleDeleteRenterAccount = () => {
+    Alert.alert(
+      "Xác nhận",
+      "Bạn có chắc muốn xóa tài khoản của người thuê này không? \nHành động này bao gồm xóa lịch sử tin nhắn với người thuê này!",
+      [
+        {
+          text: "Không",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "Có",
+          onPress: async () => {
+            try {
+              await RENTERS.doc(id).update({ account: false });
+              await deleteAccountRenter(email, userLogin?.email, id);
+              await setAccount(false);
+              console.log("Xóa tài khoản người thuê successfully");
+              navigation.goBack();
+            } catch (error) {
+              console.error("Delete failed:", error.message);
+              Alert.alert("Lỗi", "Xóa tài khoản thất bại: " + error.message);
             }
           },
         },
@@ -104,7 +153,6 @@ export default function RenterDetail({ navigation, route }) {
       const data = response.data();
       setRenter(data);
       setActive(data.active);
-      setAccount(data.account);
       setRoom(data.room);
       setFullName(data.fullName);
       setCccd(data.cccd);
@@ -113,6 +161,26 @@ export default function RenterDetail({ navigation, route }) {
       setPhone(data.phone);
       setSex(data.sex);
       setEmail(data.email);
+      setAccount(data.account);
+      try {
+        if (data.account && data.email) {
+          const USER = firestore().collection("USERS");
+          USER.doc(data.email).onSnapshot((response) => {
+            if (response.exists && response.data()) {
+              const udata = response.data();
+              setAvatar(udata.avatar || "");
+            } else {
+              setAvatar("");
+            }
+          });
+        } else {
+          console.warn("Dữ liệu không hợp lệ:", data);
+          setAvatar(""); // Avatar mặc định
+        }
+      } catch (error) {
+        console.error("Lỗi khi truy cập dữ liệu:", error);
+        setAvatar(""); // Avatar mặc định khi gặp lỗi
+      }
       setImages(data.images);
       if (data.images) {
         setImageCount(data.images.length);
@@ -121,15 +189,14 @@ export default function RenterDetail({ navigation, route }) {
     return () => {
       loadrenter();
     };
-  }, [userLogin]);
+  }, []);
   useLayoutEffect(() => {
     if (active) {
       navigation.setOptions({
-        headerRight: (props) => (
+        headerRight: () => (
           <View style={{ flexDirection: "row" }}>
             <IconButton
               icon="square-edit-outline"
-              //{...props}
               onPress={() =>
                 navigation.navigate("RenterUpdate", { item: renter })
               }
@@ -140,15 +207,6 @@ export default function RenterDetail({ navigation, route }) {
       });
     }
   }, [active]);
-  useEffect (()=>{
-    if(account){
-      const USER = firestore().collection("USERS");
-      USER.doc(email).onSnapshot((response) => {
-        const data = response.data();
-        setAvatar(data.avatar);
-      });
-    }
-  }, [email])
   const openModal = (url) => {
     setSelectImage(url);
     setIsModalVisible(true);
@@ -227,17 +285,25 @@ export default function RenterDetail({ navigation, route }) {
               backgroundColor="white"
               size={100}
               source={{
-                uri: avatar || "https://example.com/default-avatar.png",
+                uri:
+                  avatar ||
+                  "https://firebasestorage.googleapis.com/v0/b/demopj-5b390.appspot.com/o/LogoWG_nobg.png?alt=media&token=19799886-d3d1-49a9-8bb8-3ae60c7e24ba",
               }}
             />
           ) : (
             <TouchableOpacity
               style={{
-                backgroundColor: "#ff3300",
+                backgroundColor: active ? "#ff3300" : "#999999",
                 alignSelf: "center",
                 marginVertical: 20,
               }}
-              onPress={()=>navigation.navigate("Register", { item: renter, admin:userLogin.email })}
+              onPress={() =>
+                navigation.navigate("Register", {
+                  item: renter,
+                  admin: userLogin?.email,
+                })
+              }
+              disabled={!active}
             >
               <Text
                 style={{
@@ -247,7 +313,7 @@ export default function RenterDetail({ navigation, route }) {
                   color: "#fff",
                 }}
               >
-                Tạo tài khoản người thuê
+                {active ? "Tạo tài khoản người thuê" : "Người thuê đã thanh lý"}
               </Text>
             </TouchableOpacity>
           )}
@@ -255,6 +321,29 @@ export default function RenterDetail({ navigation, route }) {
             {fullName}
           </Text>
         </View>
+        {account && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: "red",
+              alignSelf: "center",
+              marginTop: 5,
+
+              borderRadius: 10,
+            }}
+            onPress={handleDeleteRenterAccount}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                margin: 10,
+                color: "#fff",
+              }}
+            >
+              Xóa tài khoản
+            </Text>
+          </TouchableOpacity>
+        )}
         <View
           style={{
             backgroundColor: "#fff",
@@ -341,17 +430,37 @@ export default function RenterDetail({ navigation, route }) {
             </Text>
           )}
         </View>
-        <Button
-          style={{
-            backgroundColor: "#ff3300",
-            width: "50%",
-            alignSelf: "center",
-            marginVertical: 20,
-          }}
-          onPress={handleDeleteThuChi}
-        >
-          <Text style={{ color: "white", fontWeight: "bold" }}>Thanh lý</Text>
-        </Button>
+        {active ? (
+          <Button
+            style={{
+              backgroundColor: "#ff3300",
+              width: "50%",
+              alignSelf: "center",
+              marginVertical: 20,
+            }}
+            onPress={handleThanhLyRenter}
+          >
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 17 }}>
+              Thanh lý
+            </Text>
+          </Button>
+        ) : (
+          <Button
+            style={{
+              backgroundColor: "#00e600",
+              width: "50%",
+              alignSelf: "center",
+              marginVertical: 20,
+            }}
+            onPress={() => {
+              RENTERS.doc(id).update({ active: true });
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 17 }}>
+              Tái kích hoạt
+            </Text>
+          </Button>
+        )}
       </View>
       <PanPinImage
         image={selectImage} // Thay bằng đường dẫn ảnh của bạn

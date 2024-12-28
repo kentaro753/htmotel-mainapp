@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import RoomsEmpty from "../screen/RoomsEmpty";
 import TKThu from "../screen/TKThu";
 import TKChi from "../screen/TKChi";
 
 const Tab = createMaterialTopTabNavigator();
 
-export default function TopTabNavigator( route ) {
-
+export default function TopTabNavigator(route) {
   const monthYear = route.monthYear || new Date();
   const initialRouteName = route.initialRouteName || "income";
   useEffect(() => {
@@ -15,7 +13,6 @@ export default function TopTabNavigator( route ) {
     console.log("route:", route);
   }, [monthYear]);
   return (
-    
     <Tab.Navigator
       initialRouteName={initialRouteName}
       screenOptions={{
@@ -34,7 +31,7 @@ export default function TopTabNavigator( route ) {
         component={TKThu}
         initialParams={{ monthYear }} // Truyền monthYear vào component TKThu
         options={{
-          tabBarLabel: "Khoảng thu",
+          tabBarLabel: "Khoản thu",
           tabBarLabelStyle: { fontSize: 13, fontWeight: "bold" },
         }}
       />
@@ -43,7 +40,7 @@ export default function TopTabNavigator( route ) {
         component={TKChi}
         initialParams={{ monthYear }}
         options={{
-          tabBarLabel: "Khoảng chi",
+          tabBarLabel: "Khoản chi",
           tabBarLabelStyle: { fontSize: 13, fontWeight: "bold" },
         }}
       />

@@ -23,11 +23,11 @@ export default function Services({ navigation, route }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
 
   const formatWithDots = (text) => {
@@ -43,7 +43,8 @@ export default function Services({ navigation, route }) {
         onPress={() =>
           onSelectTarget
             ? onSelectTarget(item) && navigation.goBack()
-            : openModal(item)}
+            : openModal(item)
+        }
       >
         <View style={styles.itemContent}>
           <Icon source={icon} size={50} />

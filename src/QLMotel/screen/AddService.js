@@ -14,6 +14,7 @@ import Modal from "react-native-modal";
 import IconComponent from "../Component/IconComponent";
 import firestore from "@react-native-firebase/firestore";
 import RoomCheckBox from "../Component/RoomCheckBox";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 export default function AddService({ navigation }) {
   const [controller, dispatch] = useMyContextProvider();
@@ -27,14 +28,16 @@ export default function AddService({ navigation }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [roomData, setRoomData] = useState([]);
   const [checkedRooms, setCheckedRooms] = useState([]);
+  const [icons, setIcons] = useState([]);
   const { userLogin } = controller;
+  const ICONS = firestore().collection("ICONS").doc("servicesIcon");
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
 
   const handleAddNewService = () => {
@@ -87,7 +90,15 @@ export default function AddService({ navigation }) {
       Alert.alert(e.message);
     }
   };
-
+  useEffect(() => {
+    const loadicon = ICONS.onSnapshot((doc) => {
+      const iconData = doc.data();
+      setIcons(iconData.list);
+    });
+    return () => {
+      loadicon();
+    };
+  }, []);
   useEffect(() => {
     ROOMS.orderBy("roomName", "asc").onSnapshot(
       (response) => {
@@ -251,7 +262,7 @@ export default function AddService({ navigation }) {
         </Text>
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
           <View style={styles.modalContent}>
-            {roomData.map((item,index) => (
+            {roomData.map((item, index) => (
               <RoomCheckBox
                 key={index}
                 item={item}
@@ -286,41 +297,10 @@ export default function AddService({ navigation }) {
         </Button>
       </View>
       <Modal isVisible={isModalVisible} onBackdropPress={toggleModal}>
-        <View style={{ flex: 1 }}>
+        <View style={{ marginVertical: 10 }}>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.modalContent}>
-              {[
-                "lightbulb-on-outline",
-                "lightning-bolt-circle",
-                "lightning-bolt",
-                "lightbulb-cfl",
-                "lightbulb-fluorescent-tube-outline",
-                "lightbulb",
-                "flashlight",
-                "home-lightning-bolt",
-                "water",
-                "water-pump",
-                "swim",
-                "wifi",
-                "car-side",
-                "washing-machine",
-                "car-wash",
-                "fridge-outline",
-                "television",
-                "deskphone",
-                "desktop-tower-monitor",
-                "ceiling-fan",
-                "fan",
-                "air-conditioner",
-                "hair-dryer",
-                "iron-outline",
-                "bed",
-                "file-cabinet",
-                "bicycle",
-                "bicycle-electric",
-                "motorbike",
-                "motorbike-electric",
-              ].map((icon, index) => (
+              {icons.map((icon, index) => (
                 <IconComponent
                   key={index}
                   source={icon}
@@ -338,8 +318,8 @@ export default function AddService({ navigation }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>
