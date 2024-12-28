@@ -22,15 +22,15 @@ export default function ChiGroup({ navigation, route }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const TCGROUPS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("TCGROUPS");
 
   const formatWithDots = (text) => {
@@ -63,8 +63,8 @@ export default function ChiGroup({ navigation, route }) {
   };
 
   useEffect(() => {
-    const loadGroup = TCGROUPS.where("type", "==", false)
-      .onSnapshot((response) => {
+    const loadGroup = TCGROUPS.where("type", "==", false).onSnapshot(
+      (response) => {
         if (!response) {
           console.log("Response is null");
           return;
@@ -85,7 +85,8 @@ export default function ChiGroup({ navigation, route }) {
         });
         //setData(arr);
         setTCGroupData(arr);
-      });
+      }
+    );
     return () => loadGroup();
   }, [userLogin]);
 

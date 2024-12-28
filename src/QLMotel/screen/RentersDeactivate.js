@@ -12,7 +12,7 @@ import { useMyContextProvider } from "../store/index";
 import firestore from "@react-native-firebase/firestore";
 import Modal from "react-native-modal";
 
-export default function Renters({ navigation, route }) {
+export default function RentersDeactivate({ navigation, route }) {
   const { onSelectRenter } = route.params || {};
   const [controller, dispatch] = useMyContextProvider();
   const { userLogin } = controller;
@@ -32,7 +32,7 @@ export default function Renters({ navigation, route }) {
 
   //fetch
   useEffect(() => {
-    RENTERS.where("active", "==", true).onSnapshot((response) => {
+    RENTERS.where("active", "==", false).onSnapshot((response) => {
       var arr = [];
       response.forEach((doc) => {
         doc.data().id != null && arr.push(doc.data());

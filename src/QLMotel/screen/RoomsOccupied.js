@@ -30,7 +30,7 @@ export default function RoomsOccupied({ navigation, route }) {
   const isFocused = useIsFocused();
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
 
   //fetch
@@ -41,6 +41,7 @@ export default function RoomsOccupied({ navigation, route }) {
         response.forEach((doc) => {
           doc.data().id != null && arr.push(doc.data());
         });
+        arr.sort((a, b) => a.roomName.localeCompare(b.roomName));
         setData(arr);
         setRoomData(arr);
       });
@@ -120,6 +121,7 @@ export default function RoomsOccupied({ navigation, route }) {
         data={roomData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
       />
       <FAB
         icon="plus"

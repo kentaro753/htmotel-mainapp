@@ -17,7 +17,7 @@ const RenterSelect = ({ onSelectRenter }) => {
   useEffect(() => {
     const loadRenter = firestore()
       .collection("USERS")
-      .doc(userLogin.email)
+      .doc(userLogin?.email)
       .collection("RENTERS")
       .onSnapshot(
         (response) => {

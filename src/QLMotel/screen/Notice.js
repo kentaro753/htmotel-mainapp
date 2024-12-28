@@ -17,7 +17,7 @@ export default function Notice({ navigation }) {
   const [data, setData] = useState([]);
   const NOTIFICATIONS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("NOTIFICATIONS");
   //fetch
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function Notice({ navigation }) {
                 : icon == "check-circle"
                 ? "#00e600"
                 : icon == "home-edit"
-                ? "#royalblue"
+                ? "royalblue"
                 : "#595959"
             }
           />

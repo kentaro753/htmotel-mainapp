@@ -51,15 +51,15 @@ export default function AddIndice({ navigation }) {
   const { userLogin } = controller;
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
 
   const handleAddIndice = () => {
@@ -78,13 +78,13 @@ export default function AddIndice({ navigation }) {
       };
 
       if (service.chargeType === 1) {
-        data.newValue = parseInt(currentServiceIndices.newValue, 10);
+        data.newValue = parseInt(currentServiceIndices.newValue, 10) || 0;
         data.oldValue = parseInt(currentServiceIndices.oldValue, 10) || 0;
         if (data.newValue < data.oldValue) {
           tempLoi = 1;
         }
       } else if (service.chargeType === 4 || service.chargeType === 5) {
-        data.indexValue = parseInt(currentServiceIndices.indexValue, 10);
+        data.indexValue = parseInt(currentServiceIndices.indexValue, 10) || 0;
         if (data.indexValue < 0) {
           tempLoi = 2;
         }
@@ -197,6 +197,7 @@ export default function AddIndice({ navigation }) {
                     updatedIndices[prevService.id] = {
                       ...updatedIndices[prevService.id],
                       oldValue: prevService.newValue,
+                      newValue: prevService.newValue,
                     };
                   }
                 });
@@ -502,12 +503,12 @@ export default function AddIndice({ navigation }) {
               {selectRoom.name ? selectRoom.name : "Chọn phòng"}
             </Text>
           </TouchableOpacity>
-          <IconButton
+          {/* <IconButton
             icon="plus-circle"
             size={30}
             onPress={toggleRoomSelect}
             color="royalblue"
-          />
+          /> */}
         </View>
         <Text variant="headlineSmall" style={styles.txt}>
           Dịch vụ

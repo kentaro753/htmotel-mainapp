@@ -14,6 +14,7 @@ import Renters from "../screen/Renters";
 import AddRenter from "../screen/AddRenter";
 import RenterDetail from "../screen/RenterDetail";
 import TTabContract from "./TTabContract";
+import TTabRenter from "./TTabRenter";
 import TTabTCGroup from "./TTabTCGroup";
 import TTabIncident from "./TTabIncident";
 import AddContract from "../screen/AddContract";
@@ -48,6 +49,8 @@ import RDForRenter from "../screen/RDForRenter";
 import IncidentDetail from "../screen/IncidentDetail";
 import ChatScreen from "../screen/ChatScreen";
 import Messages from "../screen/Messages";
+import ContractUpdate from "../screen/ContractUpdate";
+import Gioithieu from "../screen/Gioithieu";
 
 const Stack = createStackNavigator();
 const MyStack = ({ navigation, route }) => {
@@ -95,6 +98,11 @@ const MyStack = ({ navigation, route }) => {
           options={{ headerTitle: "Hợp đồng", headerTintColor: "#fff" }}
         />
         <Stack.Screen
+          name="TTabRenter"
+          component={TTabRenter}
+          options={{ headerTitle: "Người thuê", headerTintColor: "#fff" }}
+        />
+        <Stack.Screen
           name="TTabTCGroup"
           component={TTabTCGroup}
           options={{ headerTitle: "Nhóm giao dịch", headerTintColor: "#fff" }}
@@ -117,12 +125,18 @@ const MyStack = ({ navigation, route }) => {
         <Stack.Screen
           name="AddTCGroup"
           component={AddTCGroup}
-          options={{ headerTitle: "Thêm nhóm giao dịch", headerTintColor: "#fff" }}
+          options={{
+            headerTitle: "Thêm nhóm giao dịch",
+            headerTintColor: "#fff",
+          }}
         />
         <Stack.Screen
           name="TCGroupDetail"
           component={TCGroupDetail}
-          options={{ headerTitle: "Cập nhật nhóm giao dịch", headerTintColor: "#fff" }}
+          options={{
+            headerTitle: "Cập nhật nhóm giao dịch",
+            headerTintColor: "#fff",
+          }}
         />
         <Stack.Screen
           name="Indices"
@@ -163,12 +177,18 @@ const MyStack = ({ navigation, route }) => {
         <Stack.Screen
           name="ThuChiDetail"
           component={ThuChiDetail}
-          options={{ headerTitle: "Chi tiết giao dịch", headerTintColor: "#fff" }}
+          options={{
+            headerTitle: "Chi tiết giao dịch",
+            headerTintColor: "#fff",
+          }}
         />
         <Stack.Screen
           name="ThuChiUpdate"
           component={ThuChiUpdate}
-          options={{ headerTitle: "Cập nhật giao dịch", headerTintColor: "#fff" }}
+          options={{
+            headerTitle: "Cập nhật giao dịch",
+            headerTintColor: "#fff",
+          }}
         />
         <Stack.Screen
           name="UpdateBill"
@@ -178,12 +198,12 @@ const MyStack = ({ navigation, route }) => {
         <Stack.Screen
           name="AddIndice"
           component={AddIndice}
-          options={{ headerTitle: "Chốt dịch vụ", headerTintColor: "#fff" }}
+          options={{ headerTitle: "Tạo chốt dịch vụ", headerTintColor: "#fff" }}
         />
         <Stack.Screen
           name="IndiceDetail"
           component={IndiceDetail}
-          options={{ headerTitle: "Chốt dịch vụ", headerTintColor: "#fff" }}
+          options={{ headerTitle: "Chi tiết chốt dịch vụ", headerTintColor: "#fff" }}
         />
         <Stack.Screen
           name="Services"
@@ -219,7 +239,10 @@ const MyStack = ({ navigation, route }) => {
         <Stack.Screen
           name="RoomUpdate"
           component={RoomUpdate}
-          options={{ headerTitle: "Chỉnh sửa thông tin phòng",headerTintColor: "#fff" }}
+          options={{
+            headerTitle: "Chỉnh sửa thông tin phòng",
+            headerTintColor: "#fff",
+          }}
         />
         <Stack.Screen
           name="Rooms"
@@ -293,6 +316,14 @@ const MyStack = ({ navigation, route }) => {
           }}
         />
         <Stack.Screen
+          name="ContractUpdate"
+          component={ContractUpdate}
+          options={{
+            headerTitle: "Cập nhật Hợp đồng",
+            headerTintColor: "#fff",
+          }}
+        />
+        <Stack.Screen
           name="ThanhLyHD"
           component={ThanLyHD}
           options={{ headerTitle: "Tạo hóa đơn", headerTintColor: "#fff" }}
@@ -313,6 +344,11 @@ const MyStack = ({ navigation, route }) => {
           options={{ headerTitle: "Đổi mật khẩu", headerTintColor: "#fff" }}
         />
         <Stack.Screen
+          name="Gioithieu"
+          component={Gioithieu}
+          options={{ headerTitle: "Thông tin về ứng dụng", headerTintColor: "#fff" }}
+        />
+        <Stack.Screen
           name="ChangeInfo"
           component={ChangeInfo}
           options={{
@@ -328,7 +364,7 @@ const MyStack = ({ navigation, route }) => {
         <Stack.Screen
           name="Messages"
           component={Messages}
-          options={{ headerTitle: "Nhắn tin", headerTintColor: "#fff" }}
+          options={{ headerTitle: "Danh sách liên hệ", headerTintColor: "#fff" }}
         />
       </Stack.Group>
       <Stack.Group screenOptions={{ presentation: "modal" }}>

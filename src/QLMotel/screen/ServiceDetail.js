@@ -29,14 +29,16 @@ export default function ServiceDetail({ navigation, route }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [roomData, setRoomData] = useState([]);
   const [checkedRooms, setCheckedRooms] = useState([]);
+  const [icons, setIcons] = useState([]);
   const { userLogin } = controller;
+  const ICONS = firestore().collection("ICONS").doc("servicesIcon");
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
 
   const handleUpdateService = () => {
@@ -51,6 +53,51 @@ export default function ServiceDetail({ navigation, route }) {
       ) {
         Alert.alert("Đơn vị thu phí không được bỏ trống!");
       } else {
+        const batch = firestore().batch();
+
+        // Get previously checked rooms and create list of unchecked rooms
+        const previouslyCheckedRooms = service.rooms || [];
+        const uncheckedRooms = previouslyCheckedRooms.filter(
+          (roomId) => !checkedRooms.includes(roomId)
+        );
+
+        // Remove old service from all rooms if chargeType has changed
+        const oldChargeType = service.chargeType; // Assuming `service` contains the previous chargeType
+        if (oldChargeType !== selectValue) {
+          previouslyCheckedRooms.forEach((roomId) => {
+            const roomRef = ROOMS.doc(roomId);
+            batch.update(roomRef, {
+              services: firestore.FieldValue.arrayRemove({
+                id: id,
+                chargeType: oldChargeType,
+              }),
+            });
+          });
+        }
+
+        // Add service to newly checked rooms
+        checkedRooms.forEach((roomId) => {
+          const roomRef = ROOMS.doc(roomId);
+          batch.update(roomRef, {
+            services: firestore.FieldValue.arrayUnion({
+              id: id,
+              chargeType: selectValue,
+            }),
+          });
+        });
+
+        // Remove service from unchecked rooms
+        uncheckedRooms.forEach((roomId) => {
+          const roomRef = ROOMS.doc(roomId);
+          batch.update(roomRef, {
+            services: firestore.FieldValue.arrayRemove({
+              id: id,
+              chargeType: selectValue,
+            }),
+          });
+        });
+
+        // Update service details
         SERVICES.doc(id)
           .update({
             serviceName,
@@ -61,38 +108,7 @@ export default function ServiceDetail({ navigation, route }) {
             note,
             rooms: checkedRooms,
           })
-          .then(() => {
-            const batch = firestore().batch();
-
-            // Add service ID to newly checked rooms
-            checkedRooms.forEach((roomId) => {
-              const roomRef = ROOMS.doc(roomId);
-              batch.update(roomRef, {
-                services: firestore.FieldValue.arrayUnion({
-                  id: id,
-                  chargeType: selectValue,
-                }),
-              });
-            });
-
-            // Remove service ID from unchecked rooms
-            const previouslyCheckedRooms = service.rooms || [];
-            const uncheckedRooms = previouslyCheckedRooms.filter(
-              (roomId) => !checkedRooms.includes(roomId)
-            );
-
-            uncheckedRooms.forEach((roomId) => {
-              const roomRef = ROOMS.doc(roomId);
-              batch.update(roomRef, {
-                services: firestore.FieldValue.arrayRemove({
-                  id: id,
-                  chargeType: selectValue,
-                }),
-              });
-            });
-
-            return batch.commit();
-          })
+          .then(() => batch.commit())
           .then(() => {
             Alert.alert("Cập nhật dịch vụ thành công");
             navigation.goBack();
@@ -134,9 +150,14 @@ export default function ServiceDetail({ navigation, route }) {
       setNote(data.note);
       setCheckedRooms(data.rooms);
     });
+    const loadicon = ICONS.onSnapshot((doc) => {
+      const iconData = doc.data();
+      setIcons(iconData.list);
+    });
     return () => {
       loadroom();
       loadservice();
+      loadicon();
     };
   }, [userLogin, id]);
 
@@ -319,38 +340,7 @@ export default function ServiceDetail({ navigation, route }) {
         <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.modalContent}>
-              {[
-                "lightbulb-on-outline",
-                "lightning-bolt-circle",
-                "lightning-bolt",
-                "lightbulb-cfl",
-                "lightbulb-fluorescent-tube-outline",
-                "lightbulb",
-                "flashlight",
-                "home-lightning-bolt",
-                "water",
-                "water-pump",
-                "swim",
-                "wifi",
-                "car-side",
-                "washing-machine",
-                "car-wash",
-                "fridge-outline",
-                "television",
-                "deskphone",
-                "desktop-tower-monitor",
-                "ceiling-fan",
-                "fan",
-                "air-conditioner",
-                "hair-dryer",
-                "iron-outline",
-                "bed",
-                "file-cabinet",
-                "bicycle",
-                "bicycle-electric",
-                "motorbike",
-                "motorbike-electric",
-              ].map((icon, index) => (
+              {icons.map((icon, index) => (
                 <IconComponent
                   key={index}
                   source={icon}
@@ -368,8 +358,8 @@ export default function ServiceDetail({ navigation, route }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>
@@ -429,6 +419,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: "100%",
     flexWrap: "wrap",
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
 });

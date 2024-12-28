@@ -1,9 +1,13 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Icon, Text } from "react-native-paper";
-import { formatWithDots, renderDetailRow } from "./SmallComponent";
+import {
+  formatWithDots,
+  renderDetailRow,
+  stringToDate,
+} from "./SmallComponent";
 
-const ItemBill = ({ item, navigation },key) => {
+const ItemBill = ({ item, navigation }, key) => {
   const {
     id,
     createDay,
@@ -13,12 +17,29 @@ const ItemBill = ({ item, navigation },key) => {
     roomCharge,
     startDay,
     endDay,
+    state,
+    thanhLy,
   } = item;
   const sum = roomCharge + servicePrice - discount;
+  var bgColor = "white";
+  var bdColor = "black";
+  const currentDate = new Date();
+  const daysDifference = Math.ceil(
+    (stringToDate(endDay) - currentDate) / (1000 * 60 * 60 * 24)
+  );
+  if(state!=2){
+    if (daysDifference <= 0) {
+      bdColor = "red"
+      bgColor = "#ffb3b3"; // Quá hạn
+    } else if (daysDifference <= 3) {
+      bdColor = "yellow"
+      bgColor = "#ffff80"; // Còn 3 ngày trở xuống
+    }
+  }
   return (
     <TouchableOpacity
       key={key}
-      style={styles.ctitem}
+      style={{ ...styles.ctitem, backgroundColor: bgColor, borderColor:bdColor }}
       onPress={() => {
         navigation.navigate("BillDetail", { item: item });
       }}
@@ -36,7 +57,7 @@ const ItemBill = ({ item, navigation },key) => {
         </View>
         <Text style={styles.smtxt}>
           <Icon source="home-account" size={20} color="#666666" />
-          {room?.name}
+          {room?.name} {thanhLy&& " - Thanh lý"}
         </Text>
         {renderDetailRow(
           "Tiền phòng",

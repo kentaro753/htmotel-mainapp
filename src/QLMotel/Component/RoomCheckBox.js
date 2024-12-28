@@ -16,11 +16,12 @@ const RoomCheckBox = ({ item, onChange, checked: checkedProp }) => {
   };
 
   return (
-    <View style={{width:"50%", justifyContent:"flex-start"}}>
+    <View style={{ width: "50%", justifyContent: "flex-start" }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Checkbox
           status={checked ? "checked" : "unchecked"}
           onPress={handlePress}
+          color="#ff5c33"
         />
         <Text style={{ fontSize: 20 }}>{roomName}</Text>
       </View>

@@ -22,23 +22,23 @@ export default function RoomsForRenter({ navigation }) {
   const [checkedServices, setCheckedServices] = useState([]);
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("ROOMS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("SERVICES");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("RENTERS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.admin)
+    .doc(userLogin?.admin)
     .collection("CONTRACTS");
   //fetch
   useEffect(() => {
-    RENTERS.doc(userLogin.renterId).onSnapshot((renter) => {
+    RENTERS.doc(userLogin?.renterId).onSnapshot((renter) => {
       const data = renter.data();
       Promise.all(
         data.contracts.map((contract) =>
@@ -58,7 +58,7 @@ export default function RoomsForRenter({ navigation }) {
           setRoomData(validRooms);
           console.log(validRooms.length);
         })
-        .catch((error) => console.log("Error fetching rooms:", error))
+        .catch((error) => console.log("Error fetching rooms:", error));
     });
   }, []);
   useEffect(() => {
@@ -67,7 +67,12 @@ export default function RoomsForRenter({ navigation }) {
   const renderItem = ({ item }) => {
     const { roomName, state } = item;
     return (
-      <TouchableOpacity style={styles.roomitem} onPress={() => navigation.navigate("RDForRenter", { id: item.contract })}>
+      <TouchableOpacity
+        style={styles.roomitem}
+        onPress={() =>
+          navigation.navigate("RDForRenter", { id: item.contract })
+        }
+      >
         <Text style={{ fontWeight: "bold", fontSize: 18 }}>{roomName}</Text>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {state ? (
@@ -132,6 +137,7 @@ export default function RoomsForRenter({ navigation }) {
         data={roomData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+
       />
     </View>
   );

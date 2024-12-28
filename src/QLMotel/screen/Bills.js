@@ -33,12 +33,12 @@ export default function Bills({ navigation }) {
   const [startOpen, setStartOpen] = useState(false);
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
     .collection("BILLS");
 
   //fetch
   useEffect(() => {
-    if (userLogin.role == "admin") {
+    if (userLogin?.role == "admin") {
       BILLS.where("state", "==", 0).onSnapshot((response) => {
         var arr = [];
         response.forEach((doc) => {
@@ -50,8 +50,8 @@ export default function Bills({ navigation }) {
         setData(arr);
         setBillsData(arr);
       });
-    } else if (userLogin.role == "renter") {
-      BILLS.where("renterId", "==", userLogin.renterId)
+    } else if (userLogin?.role == "renter") {
+      BILLS.where("renterId", "==", userLogin?.renterId)
         .where("state", "==", 0)
         .onSnapshot((response) => {
           var arr = [];
@@ -118,10 +118,21 @@ export default function Bills({ navigation }) {
           </TouchableOpacity>
         </View>
       </View>
-      {billsData.map((item, index) => (
+      {/* {billsData.map((item, index) => (
         <ItemBill item={item} key={index} navigation={navigation} />
-      ))}
-      {userLogin.role == "admin" && (
+      ))} */}
+      <FlatList
+        style={{
+          flex: 1,
+        }}
+        data={billsData}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ItemBill item={item} navigation={navigation} />
+        )}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
+      />
+      {userLogin?.role == "admin" && (
         <FAB
           icon="plus"
           style={styles.fab}

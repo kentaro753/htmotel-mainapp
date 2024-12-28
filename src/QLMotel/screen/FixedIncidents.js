@@ -20,7 +20,7 @@ export default function FixedIncidents({ navigation }) {
   const [title, setTitle] = useState("");
   const INCIDENTS = firestore()
     .collection("USERS")
-    .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
     .collection("INCIDENTS");
   //fetch
   useEffect(() => {
@@ -111,6 +111,7 @@ export default function FixedIncidents({ navigation }) {
         data={incidentData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
       />
       <FAB
         icon="plus"

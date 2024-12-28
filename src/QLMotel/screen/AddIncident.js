@@ -29,9 +29,14 @@ export default function AddIncident({ navigation }) {
   const handleAddNewIncident = async () => {
     if (isProcessing) return; // Chặn bấm nhiều lần
     setIsProcessing(true); // Hiển thị processing
+    var notification = {
+      title: "Báo cáo sự cố",
+      body: `Có báo cáo sự cố mới được tạo. Vui lòng kiểm tra!`,
+    };
+    var icon = "alert";
     const INCIDENTS = firestore()
       .collection("USERS")
-      .doc(userLogin.role == "renter" ? userLogin.admin : userLogin.email)
+      .doc(userLogin?.role == "renter" ? userLogin?.admin : userLogin?.email)
       .collection("INCIDENTS");
     try {
       if (title === "") {
@@ -39,9 +44,7 @@ export default function AddIncident({ navigation }) {
       } else if (mota === "") {
         Alert.alert("Vui lòng mô tả chi tiết sự cố!");
       } else {
-        const uploadedAttachments = []; // Array to store uploaded file details
-
-        // Upload each file and add details to uploadedAttachments
+        const uploadedAttachments = [];
         for (const attachment of attachments) {
           const uploadedFile = await uploadFile(attachment);
           if (uploadedFile) {
@@ -53,16 +56,14 @@ export default function AddIncident({ navigation }) {
           Alert.alert("Upload tệp đính kèm không thành công");
           return;
         }
-
-        // Add the incident document with updatedAttachments
         await INCIDENTS.add({
           datetime: new Date(),
           title,
-          reportBy: userLogin.role == "renter" ? userLogin.renterId : "admin",
+          reportBy: userLogin?.role == "renter" ? userLogin?.renterId : "admin",
           level: selectLevel,
           isFixed: false,
           mota,
-          attachments: uploadedAttachments, // Add uploaded attachments array
+          attachments: uploadedAttachments,
         })
           .then((docRef) => {
             INCIDENTS.doc(docRef.id).update({ id: docRef.id });

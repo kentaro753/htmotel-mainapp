@@ -39,11 +39,11 @@ export default function AddRenter({ navigation }) {
   const { userLogin } = controller;
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("RENTERS");
 
   const handleAddNewRenter = () => {
@@ -57,8 +57,8 @@ export default function AddRenter({ navigation }) {
       Alert.alert("Địa chỉ thường trú không được bỏ trống!");
     } else {
       RENTERS.add({
-        active:true,
-        account:false,
+        active: true,
+        account: false,
         fullName,
         sex,
         cccd,
@@ -218,7 +218,7 @@ export default function AddRenter({ navigation }) {
         <Picker
           selectedValue={sex}
           onValueChange={(itemValue) => {
-            console.log("Selected Value:", itemValue); 
+            console.log("Selected Value:", itemValue);
             setSex(itemValue);
           }}
         >
@@ -396,7 +396,7 @@ export default function AddRenter({ navigation }) {
         </Button>
       </View>
       <Modal isVisible={isModalVisible} onBackdropPress={toggleModal}>
-        <View style={{ flex: 1 }}>
+        <View>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.modalContent}>
               {roomData.map((item, index) => (
@@ -433,8 +433,8 @@ export default function AddRenter({ navigation }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>

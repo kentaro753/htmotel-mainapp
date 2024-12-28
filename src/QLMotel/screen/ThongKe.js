@@ -34,10 +34,8 @@ export default function ThongKe({ navigation, route }) {
   const [startOpen, setStartOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-
   const showPicker = () => {
     setStartOpen(true);
-
   };
 
   const onValueChange = (event, newDate) => {
@@ -46,7 +44,6 @@ export default function ThongKe({ navigation, route }) {
       setMonthYear(newDate);
       setLoading(true);
     }
-
   };
 
   const formatMonthYear = (date) => {
@@ -65,7 +62,6 @@ export default function ThongKe({ navigation, route }) {
   useEffect(() => {
     console.log("Updated monthYear in ThongKe:", monthYear);
   }, [monthYear]);
-
 
   const getLastSixMonths = () => {
     const result = [];
@@ -92,7 +88,7 @@ export default function ThongKe({ navigation, route }) {
         const monthsData = {};
         const THUCHIS = firestore()
           .collection("USERS")
-          .doc(userLogin.email)
+          .doc(userLogin?.email)
           .collection("THUCHIS");
         monthsArray.forEach((monthYear) => {
           monthsData[monthYear] = { income: 0, expense: 0 }; // Gán giá trị mặc định là 0

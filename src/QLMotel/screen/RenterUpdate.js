@@ -27,6 +27,7 @@ export default function RenterUpdate({ navigation, route }) {
   const [email, setEmail] = useState("");
   const [thuongtru, setThuongtru] = useState("");
   const [imageCount, setImageCount] = useState(0);
+  const [imageChange, setImageChange] = useState(0);
   const [images, setImages] = useState([]);
   const [selectRoom, setSelectRoom] = useState({
     id: "",
@@ -34,7 +35,7 @@ export default function RenterUpdate({ navigation, route }) {
     contract: "",
   });
   const [previousRoom, setPreviousRoom] = useState("");
-  const [sex, setSex] = useState(true);
+  const [sex, setSex] = useState("Nam");
   const [account, setAccount] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [roomData, setRoomData] = useState([]);
@@ -42,19 +43,19 @@ export default function RenterUpdate({ navigation, route }) {
   const { userLogin } = controller;
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("RENTERS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
   const THUCHIS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("THUCHIS");
   const handleUpdateRenter = async () => {
     if (fullName === "") {
@@ -66,67 +67,62 @@ export default function RenterUpdate({ navigation, route }) {
     } else if (thuongtru === "") {
       Alert.alert("Địa chỉ thường trú không được bỏ trống!");
     } else {
-      console.log(
-        fullName,
-        sex,
-        userLogin.email,
-        cccd,
-        phone,
-        thuongtru,
-        selectRoom,
-        email
-      );
+      console.log(fullName, sex, cccd, phone, thuongtru, selectRoom, email);
       await RENTERS.doc(id)
         .update({
           fullName,
           sex,
-          userId: userLogin.email,
           cccd,
           phone,
           thuongtru,
           room: selectRoom,
           email,
         })
-        .then(() => {
+        .then(async () => {
           let upImage = [];
-          if (imageCount !== 0) {
-            let num = 1;
+          if (imageCount !== 0 && imageChange !== 0) {
+            const uploadPromises = images.map(async (image, index) => {
+              const position = index + 1; // Vị trí hiện tại của ảnh trong danh sách
+              const refImage = storage().ref(
+                `/images/${id}-image${position}.jpg`
+              );
 
-            // Tạo mảng các Promise tải lên ảnh
-            const uploadPromises = images.map((image) => {
               if (image.url.startsWith("https://")) {
-                // Nếu ảnh đã tồn tại trên Firebase, thêm vào danh sách mà không tải lại
-                upImage = [...upImage, { url: image.url }];
-                return Promise.resolve(); // Trả về Promise đã hoàn thành
-              } else {
-                // Nếu ảnh mới, thực hiện tải lên
-                const refImage = storage().ref(
-                  "/images/" + id + "-image" + num + ".jpg"
-                );
-                num += 1;
+                // Tải dữ liệu từ URL cũ
+                try {
+                  const response = await fetch(image.url);
+                  const blob = await response.blob();
 
-                return refImage
-                  .putFile(image.url) // Tải file từ đường dẫn nội bộ
-                  .then(() => refImage.getDownloadURL())
-                  .then((link) => {
-                    upImage = [...upImage, { url: link }]; // Thêm ảnh đã tải lên vào mảng
-                  })
-                  .catch((e) =>
-                    console.error("Lỗi khi tải lên ảnh:", e.message)
-                  );
+                  // Tải lên vị trí mới trong Firebase
+                  await refImage.put(blob);
+                  const link = await refImage.getDownloadURL();
+
+                  // Cập nhật URL mới
+                  upImage.push({ url: link });
+                } catch (e) {
+                  console.error("Lỗi khi sao chép ảnh cũ:", e.message);
+                }
+              } else {
+                // Tải ảnh mới lên Firebase
+                try {
+                  await refImage.putFile(image.url);
+                  const link = await refImage.getDownloadURL();
+                  upImage.push({ url: link });
+                } catch (e) {
+                  console.error("Lỗi khi tải lên ảnh mới:", e.message);
+                }
               }
             });
 
-            // Chờ tất cả các ảnh tải lên xong trước khi cập nhật Firestore
-            Promise.all(uploadPromises)
-              .then(() => {
-                console.log("Danh sách ảnh tải lên hoàn chỉnh:", upImage);
-                RENTERS.doc(id).update({ images: upImage });
-              })
-              .catch((e) =>
-                console.error("Lỗi khi cập nhật Firestore:", e.message)
-              );
+            // Chờ tất cả ảnh được xử lý
+            await Promise.all(uploadPromises);
+            // Cập nhật danh sách ảnh lên Firestore
+            await RENTERS.doc(id).update({ images: upImage });
           }
+          if (imageCount == 0) {
+            await RENTERS.doc(id).update({ images: upImage });
+          }
+
           const batch = firestore().batch();
           const currentRoomRef = ROOMS.doc(selectRoom.id);
           const previousRoomRef = ROOMS.doc(previousRoom);
@@ -146,8 +142,8 @@ export default function RenterUpdate({ navigation, route }) {
               renters: firestore.FieldValue.arrayRemove(id),
             });
           }
-          const cquery = CONTRACTS.where("renter.id", "==", id).get();
-          const tcquery = THUCHIS.where("target.id", "==", id).get();
+          const cquery = await CONTRACTS.where("renter.id", "==", id).get();
+          const tcquery = await THUCHIS.where("target.id", "==", id).get();
           if (!cquery.empty) {
             cquery.forEach((doc) => {
               batch.update(doc.ref, {
@@ -163,7 +159,7 @@ export default function RenterUpdate({ navigation, route }) {
               });
             });
           }
-          return batch.commit();
+          await batch.commit();
         })
         .then(() => {
           Alert.alert("Cập nhật thông tin người thuê thành công");
@@ -222,6 +218,7 @@ export default function RenterUpdate({ navigation, route }) {
       .then((pic) => {
         setImages((images) => [...images, { url: pic.path }]);
         setImageCount(imageCount + 1);
+        setImageChange(imageChange + 1);
         console.log(images);
       })
       .catch((e) => console.log(e.message));
@@ -229,6 +226,7 @@ export default function RenterUpdate({ navigation, route }) {
   const handleImageExclude = (item) => {
     setImages((prev) => prev.filter((image) => image !== item));
     setImageCount(imageCount - 1);
+    setImageChange(imageChange + 1);
   };
   const toggleModal = () => {
     setIsModalVisible(!isModalVisible);
@@ -292,11 +290,12 @@ export default function RenterUpdate({ navigation, route }) {
         <Picker
           selectedValue={sex}
           onValueChange={(itemValue) => {
+            console.log("Selected Value:", itemValue);
             setSex(itemValue);
           }}
         >
-          <Picker.Item label="Nam" value={true} />
-          <Picker.Item label="Nữ" value={false} />
+          <Picker.Item label="Nam" value="Nam" />
+          <Picker.Item label="Nữ" value="Nữ" />
         </Picker>
         <Text variant="headlineSmall" style={styles.txt}>
           Căn cước công dân <Text style={{ color: "red" }}>*</Text>
@@ -507,8 +506,8 @@ export default function RenterUpdate({ navigation, route }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>

@@ -16,24 +16,25 @@ export default function BillDetail({ navigation, route }) {
   const { userLogin } = controller;
   const [data, setData] = useState({});
   const [service, setService] = useState([]);
+  const [lastBillMY, setLastBillMY] = useState("");
   const [serviceIndices, setServiceIndices] = useState({});
   const [indiceData, setIndiceData] = useState({});
   const [loading, setLoading] = useState(true);
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
     .collection("BILLS");
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
     .collection("INDICES");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
     .collection("CONTRACTS");
   const THUCHIS = firestore()
     .collection("USERS")
-    .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
     .collection("THUCHIS");
   const handleThanhToan = () => {
     Alert.alert(
@@ -103,6 +104,12 @@ export default function BillDetail({ navigation, route }) {
           onPress: () => {
             if (data.thanhLy) {
               Alert.alert("Cảnh báo", "Không thể xóa hóa đơn thanh lý!");
+            }
+            if (data.monthYear != lastBillMY) {
+              Alert.alert(
+                "Cảnh báo",
+                "Chỉ có thể xóa hóa đơn gần nhất của hợp đồng!"
+              );
             } else {
               BILLS.doc(id)
                 .delete()
@@ -149,6 +156,10 @@ export default function BillDetail({ navigation, route }) {
       const billData = response.data();
       if (billData) {
         setData(billData);
+        CONTRACTS.doc(billData.contractId).onSnapshot((contract) => {
+          const cdata = contract.data();
+          setLastBillMY(cdata.billMonthYear);
+        });
         setLoading(false); // Data has been loaded
       } else {
         setLoading(false); // Data not found, stop loading
@@ -233,7 +244,6 @@ export default function BillDetail({ navigation, route }) {
   const renderServiceItem = ({ item }) => {
     const { serviceName, icon, fee, chargeBase, chargeType, roomName } = item;
     const currentServiceIndices = serviceIndices[item.id] || {};
-
     return (
       <View style={styles.itemContainer}>
         <View style={styles.itemContent}>
@@ -407,7 +417,7 @@ export default function BillDetail({ navigation, route }) {
           </View>
         ) : (
           <View style={styles.buttonRow}>
-            {userLogin.role == "admin" && (
+            {userLogin?.role == "admin" && (
               <>
                 <Button
                   style={[styles.actionButton, styles.updateButton]}

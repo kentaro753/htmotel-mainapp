@@ -16,6 +16,7 @@ import firestore from "@react-native-firebase/firestore";
 import DatePicker from "react-native-date-picker";
 import moment from "moment";
 import RenterInclude from "../Component/RenterInclude";
+import { dateToString } from "../Component/SmallComponent";
 
 export default function AddContract({ navigation, route }) {
   const { roomId, rName, rMaxPeople, rPrice } = route.params || {};
@@ -43,22 +44,21 @@ export default function AddContract({ navigation, route }) {
   const [disabled, setDisabled] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [roomData, setRoomData] = useState([]);
-
   const [renterData, setRenterData] = useState([]);
   const [renterList, setRenterList] = useState([]);
   const [excludeRenter, setExcludeRenter] = useState([]);
 
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("RENTERS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
 
   const handleAddNewContract = async () => {
@@ -158,7 +158,7 @@ export default function AddContract({ navigation, route }) {
         console.error(error);
       }
     );
-    const loadRenter = RENTERS.onSnapshot(
+    const loadRenter = RENTERS.where("active", "==", true).onSnapshot(
       (response) => {
         const arr = [];
         response.forEach((doc) => {
@@ -185,12 +185,6 @@ export default function AddContract({ navigation, route }) {
       setEndDay(startDay);
     }
   }, [startDay, endDay]);
-  const dateToString = (date) => {
-    if (!date) {
-      return "";
-    }
-    return moment(date).format("DD/MM/YYYY");
-  };
 
   const toggleRenterSelect = () => {
     setIsRenterSelectVisible(!isRenterSelectVisible);
@@ -318,6 +312,7 @@ export default function AddContract({ navigation, route }) {
           <TouchableOpacity
             style={{ flexDirection: "row" }}
             onPress={() => setStartOpen(true)}
+            disabled
           >
             <Text style={{ fontSize: 19 }}>
               {startDay.toLocaleDateString()}{" "}
@@ -460,7 +455,7 @@ export default function AddContract({ navigation, route }) {
         </Button>
       </View>
       <Modal isVisible={isModalVisible} onBackdropPress={toggleModal}>
-        <View style={{ flex: 1 }}>
+        <View>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.modalContent}>
               {excludeRenter.map((item, index) => (
@@ -482,8 +477,8 @@ export default function AddContract({ navigation, route }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>

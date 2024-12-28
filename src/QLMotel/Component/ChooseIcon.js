@@ -12,7 +12,7 @@ const ChooseIcon = ({ isVisible, onClose }) => {
     >
       <View style={styles.modalContent}>
         <Text style={{ fontSize: 30 }}>This is a modal!</Text>
-        <Button onPress={onClose} title="Dismiss" />
+        <Button onPress={onClose} title="Đóng" />
       </View>
     </Modal>
   );

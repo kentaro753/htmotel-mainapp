@@ -35,12 +35,8 @@ export default function Rooms({ navigation, route }) {
   const isFocused = useIsFocused();
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
-  const SERVICES = firestore()
-    .collection("USERS")
-    .doc(userLogin.email)
-    .collection("SERVICES");
 
   //fetch
   useEffect(() => {
@@ -181,6 +177,7 @@ export default function Rooms({ navigation, route }) {
           data={roomData}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          ListFooterComponent={<View style={{ height: 90 }}></View>}
         />
         <FAB
           icon="plus"

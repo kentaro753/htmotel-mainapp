@@ -32,39 +32,40 @@ export default function BillsOutdate({ navigation }) {
   const [monthYear, setMonthYear] = useState(new Date());
   const [startOpen, setStartOpen] = useState(false);
   const BILLS = firestore()
-  .collection("USERS")
-  .doc(userLogin.role == "admin" ? userLogin.email : userLogin.admin)
-  .collection("BILLS");
+    .collection("USERS")
+    .doc(userLogin?.role == "admin" ? userLogin?.email : userLogin?.admin)
+    .collection("BILLS");
 
-//fetch
-useEffect(() => {
-  if (userLogin.role == "admin") {
-    BILLS.where("state", "==", 1).onSnapshot((response) => {
-      var arr = [];
-      response.forEach((doc) => {
-        const data = doc.data();
-        if (data.id != null) {
-          arr.push(data);
-        }
+  //fetch
+  useEffect(() => {
+    if (userLogin?.role == "admin") {
+      BILLS.where("state", "==", 1).onSnapshot((response) => {
+        var arr = [];
+        response.forEach((doc) => {
+          const data = doc.data();
+          if (data.id != null) {
+            arr.push(data);
+          }
+        });
+        setData(arr);
+        setBillsData(arr);
       });
-      setData(arr);
-      setBillsData(arr);
-    });
-  }
-  else if (userLogin.role == "renter") {
-    BILLS.where("renterId", "==", userLogin.renterId).where("state", "==", 1).onSnapshot((response) => {
-      var arr = [];
-      response.forEach((doc) => {
-        const data = doc.data();
-        if (data.id != null) {
-          arr.push(data);
-        }
-      });
-      setData(arr);
-      setBillsData(arr);
-    });
-  }
-}, [userLogin]);
+    } else if (userLogin?.role == "renter") {
+      BILLS.where("renterId", "==", userLogin?.renterId)
+        .where("state", "==", 1)
+        .onSnapshot((response) => {
+          var arr = [];
+          response.forEach((doc) => {
+            const data = doc.data();
+            if (data.id != null) {
+              arr.push(data);
+            }
+          });
+          setData(arr);
+          setBillsData(arr);
+        });
+    }
+  }, [userLogin]);
 
   useEffect(() => {
     // Lọc dữ liệu dựa trên thuộc tính monthYear
@@ -117,10 +118,18 @@ useEffect(() => {
           </TouchableOpacity>
         </View>
       </View>
-      {billsData.map((item, index) => (
-        <ItemBill item={item} key={index} navigation={navigation} />
-      ))}
-      {userLogin.role == "admin" && (
+      <FlatList
+        style={{
+          flex: 1,
+        }}
+        data={billsData}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ItemBill item={item} navigation={navigation} />
+        )}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
+      />
+      {userLogin?.role == "admin" && (
         <FAB
           icon="plus"
           style={styles.fab}

@@ -32,15 +32,15 @@ export default function DeactivateContract({ navigation }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const RENTERS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("RENTERS");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
 
   //fetch
@@ -129,6 +129,7 @@ export default function DeactivateContract({ navigation }) {
         data={contractData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
       />
       <FAB
         icon="plus"

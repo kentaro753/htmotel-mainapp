@@ -18,7 +18,7 @@ const RentingRoom = ({ onSelectRoom }) => {
   useEffect(() => {
     const loadRoom = firestore()
       .collection("USERS")
-      .doc(userLogin.email)
+      .doc(userLogin?.email)
       .collection("ROOMS")
       .where("state", "==", true)
       .onSnapshot(

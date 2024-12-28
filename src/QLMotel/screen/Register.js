@@ -64,14 +64,16 @@ export default function Register({ navigation, route }) {
         placeholder={"Họ và tên"}
         value={fullName}
         onChangeText={setFullName}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
         disabled={disabled}
       />
       <TextInput
         placeholder={"Email"}
         value={email}
         onChangeText={setEmail}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
         disabled={disabled}
       />
       <TextInput
@@ -79,7 +81,8 @@ export default function Register({ navigation, route }) {
         placeholder={"Số điện thoại"}
         value={phone}
         onChangeText={setPhone}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
         maxLength={10}
         disabled={disabled}
       />
@@ -88,7 +91,8 @@ export default function Register({ navigation, route }) {
         placeholder={"Mật khẩu"}
         value={password}
         onChangeText={setPassword}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
         right={
           <TextInput.Icon
             icon={showPass ? "eye-off" : "eye"}
@@ -101,7 +105,8 @@ export default function Register({ navigation, route }) {
         placeholder={"Nhập lại mật khẩu"}
         value={cpassword}
         onChangeText={setCPassword}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
         right={
           <TextInput.Icon
             icon={showPass ? "eye-off" : "eye"}
@@ -112,10 +117,15 @@ export default function Register({ navigation, route }) {
       <Button
         mode="contained"
         onPress={handleCreateAccount}
-        textColor="#000"
-        style={{ marginTop: 5, padding: 5, backgroundColor: "#ff944d" }}
+        textColor="#fff"
+        style={{
+          marginVertical: 10,
+          padding: 5,
+          backgroundColor: "#ff6600",
+          borderRadius: 3,
+        }}
       >
-        Tạo tài khoản
+        <Text style={{ fontSize: 18 }}>Tạo tài khoản</Text>
       </Button>
     </View>
   );

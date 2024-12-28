@@ -19,6 +19,7 @@ import {
 import { login, useMyContextProvider } from "../store/index";
 import firestore from "@react-native-firebase/firestore";
 import Modal from "react-native-modal";
+import { stringToDate } from "../Component/SmallComponent";
 
 export default function TKThu({ navigation, route }) {
   const monthYear = route?.params.monthYear || new Date();
@@ -30,7 +31,7 @@ export default function TKThu({ navigation, route }) {
   const [modalItems, setModalItems] = useState([]);
   const THUCHIS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("THUCHIS");
   //fetch
   useEffect(() => {
@@ -79,7 +80,11 @@ export default function TKThu({ navigation, route }) {
           totalThu: tempData[date].totalThu,
           totalChi: tempData[date].totalChi,
         }));
-
+        groupedData.sort((a, b) => {
+          const dateA = stringToDate(a.date);
+          const dateB = stringToDate(b.date);
+          return dateB - dateA; // descending
+        });
         console.log(monthYear);
         setData(groupedData);
         setThuChiData(groupedData);
@@ -257,7 +262,7 @@ export default function TKThu({ navigation, route }) {
         onPress={() => navigation.navigate("AddThuChi")}
       />
       <Modal isVisible={isModalVisible} onBackdropPress={closeModal}>
-        <View style={{ flex: 1 }}>
+        <View>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.modalContent}>
               {modalItems.map((item, index) => {
@@ -288,8 +293,8 @@ export default function TKThu({ navigation, route }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>
@@ -300,7 +305,6 @@ export default function TKThu({ navigation, route }) {
 
 const styles = StyleSheet.create({
   scrollViewContent: {
-    flex: 1,
     justifyContent: "flex-start",
   },
   flatlst: {
@@ -350,7 +354,6 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   modalContent: {
-    flex: 1,
     backgroundColor: "white",
     padding: 20,
     borderRadius: 10,

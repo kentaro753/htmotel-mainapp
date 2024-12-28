@@ -38,7 +38,7 @@ export default function ThuChiDetail({ navigation, route }) {
   const { userLogin } = controller;
   const THUCHIS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("THUCHIS");
   const handleDeleteThuChi = () => {
     Alert.alert(
@@ -366,7 +366,6 @@ export default function ThuChiDetail({ navigation, route }) {
         isModalVisible={isModalVisible}
         onClose={closeModal}
       />
-      
     </ScrollView>
   );
 }

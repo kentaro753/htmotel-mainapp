@@ -21,6 +21,7 @@ import { login, useMyContextProvider } from "../store/index";
 import firestore from "@react-native-firebase/firestore";
 import Modal from "react-native-modal";
 import MonthYearPicker from "react-native-month-year-picker";
+import { stringToDate } from "../Component/SmallComponent";
 
 export default function ThuChi({ navigation }) {
   const [controller, dispatch] = useMyContextProvider();
@@ -39,24 +40,22 @@ export default function ThuChi({ navigation }) {
   const [modalItems, setModalItems] = useState([]);
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("BILLS");
   const THUCHIS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("THUCHIS");
   //fetch
   useEffect(() => {
     THUCHIS.orderBy("date", "desc").onSnapshot((response) => {
       const tempData = {};
-      // Gom nhóm các mục theo date và tính tổng thu chi
       response.forEach((doc) => {
         const data = doc.data();
         if (filterTC == "all") {
           if (data.id != null) {
             const date = data.date;
             const [sDay, sMonth, sYear] = date.split("/").map(Number);
-            // Nếu date chưa có trong tempData, tạo một mảng và các biến tổng thu chi
             if (!tempData[date]) {
               tempData[date] = {
                 monthYear: sMonth + "/" + sYear,
@@ -67,8 +66,6 @@ export default function ThuChi({ navigation }) {
             }
             // Thêm dữ liệu vào nhóm tương ứng
             tempData[date].items.push(data);
-
-            // Tính tổng thu chi
             if (data.type === true) {
               tempData[date].totalThu += data.money; // Tiền thu
             } else {
@@ -114,7 +111,11 @@ export default function ThuChi({ navigation }) {
         totalThu: tempData[date].totalThu,
         totalChi: tempData[date].totalChi,
       }));
-
+      groupedData.sort((a, b) => {
+        const dateA = stringToDate(a.date);
+        const dateB = stringToDate(b.date);
+        return dateB - dateA; // descending
+      });
       console.log(JSON.stringify(groupedData, null, 2));
       setData(groupedData);
       setThuChiData(groupedData);
@@ -133,7 +134,6 @@ export default function ThuChi({ navigation }) {
     });
   }, [monthYear]);
   useEffect(() => {
-    // Lọc dữ liệu dựa trên thuộc tính monthYear
     setThuChiData(
       data.filter((s) => s.monthYear === formatMonthYear(monthYear))
     );
@@ -175,7 +175,6 @@ export default function ThuChi({ navigation }) {
     return numericText.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
   const getWeekday = (dateString) => {
-    // Chuyển đổi chuỗi ngày thành đối tượng Date
     const [day, month, year] = dateString.split("/").map(Number);
     const date = new Date(year, month - 1, day); // Tháng trong Date bắt đầu từ 0
     const weekdays = [
@@ -445,8 +444,8 @@ export default function ThuChi({ navigation }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>
@@ -573,5 +572,10 @@ const styles = StyleSheet.create({
     fontSize: 19,
     color: "#000",
   },
-  rdbtn: { borderWidth: 1, borderRadius: 10, borderColor:"#999999",marginTop:5 },
+  rdbtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    borderColor: "#999999",
+    marginTop: 5,
+  },
 });

@@ -23,23 +23,23 @@ export default function ContractDetail({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const BILLS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("BILLS");
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
   const CONTRACTS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("CONTRACTS");
   const ROOMS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("ROOMS");
   const SERVICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("SERVICES");
   const handleThanhLy = () => {
     Alert.alert(
@@ -79,7 +79,7 @@ export default function ContractDetail({ navigation, route }) {
       const loadRoom = ROOMS.doc(data.room.id).onSnapshot(
         (response) => {
           const rdata = response.data();
-          console.log(rdata)
+          console.log(rdata);
           setService(rdata.services);
           // INDICES.where("room.id", "==", rdata.id)
           //   .where("isLast", "==", true)
@@ -90,7 +90,7 @@ export default function ContractDetail({ navigation, route }) {
           //         const existingServices = idata.services.filter((curr) =>
           //           rdata.services.some((service) => service.id === curr.id)
           //         );
-                  
+
           //         const existingServiceIndices = existingServices.reduce(
           //           (acc, curr) => {
           //             acc[curr.id] = curr;
@@ -194,7 +194,7 @@ export default function ContractDetail({ navigation, route }) {
     </View>
   );
   const renderServiceItem = ({ item }) => {
-    const { serviceName, icon, fee, chargeBase, chargeType, roomName } = item;
+    const { serviceName, icon, fee, chargeBase, chargeType } = item;
     const currentServiceIndices = serviceIndices[item.id] || {};
 
     return (
@@ -296,15 +296,21 @@ export default function ContractDetail({ navigation, route }) {
     return (
       <View style={styles.container}>
         {renderContractInfo()}
-        {renderDetailRow("Tiền phòng", `${formatWithDots(data.room?.price.toString())} đ`)}
-        {renderDetailRow("Tiền cọc", `${formatWithDots(data.tiencoc.toString())} đ`)}
+        {renderDetailRow(
+          "Tiền phòng",
+          `${formatWithDots(data.room?.price.toString())} đ`
+        )}
+        {renderDetailRow(
+          "Tiền cọc",
+          `${formatWithDots(data.tiencoc.toString())} đ`
+        )}
         {renderDetailRow("Kì thanh toán", `${data.chuki} tháng`)}
 
         {data.active ? (
           <View style={styles.buttonRow}>
             <Button
               style={[styles.actionButton, styles.updateButton]}
-              onPress={() => Alert.alert("Chưa được thực hiện!")}
+              onPress={() => navigation.navigate("ContractUpdate", { id: id })}
             >
               <Text style={styles.buttonText}>Cập nhật</Text>
             </Button>
@@ -402,6 +408,7 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: "row",
+    marginHorizontal: 10,
   },
   detailLabel: {
     width: "40%",

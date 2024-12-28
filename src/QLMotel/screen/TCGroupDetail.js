@@ -25,10 +25,12 @@ export default function TCGroupDetail({ navigation, route }) {
   const [selectIcon, setSelectIcon] = useState("help");
   const [type, setType] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [icons, setIcons] = useState([]);
   const { userLogin } = controller;
+  const ICONS = firestore().collection("ICONS").doc("thuchiIcon");
   const TCGROUPS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("TCGROUPS");
   const handleUpdateGroup = async () => {
     try {
@@ -70,8 +72,13 @@ export default function TCGroupDetail({ navigation, route }) {
       setSelectIcon(data.icon);
       setNote(data.note);
     });
+    const loadicon = ICONS.onSnapshot((doc) => {
+      const iconData = doc.data();
+      setIcons(iconData.list);
+    });
     return () => {
       loadgroup();
+      loadicon();
     };
   }, [userLogin, id]);
 
@@ -250,39 +257,7 @@ export default function TCGroupDetail({ navigation, route }) {
         <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.modalContent}>
-              {[
-                "lightbulb-on-outline",
-                "lightning-bolt-circle",
-                "lightning-bolt",
-                "lightbulb-cfl",
-                "lightbulb-fluorescent-tube-outline",
-                "lightbulb",
-                "flashlight",
-                "home-lightning-bolt",
-                "water",
-                "water-pump",
-                "swim",
-                "wifi",
-                "car-side",
-                "washing-machine",
-                "car-wash",
-                "fridge-outline",
-                "television",
-                "deskphone",
-                "desktop-tower-monitor",
-                "ceiling-fan",
-                "fan",
-                "air-conditioner",
-                "hair-dryer",
-                "iron-outline",
-                "bed",
-                "file-cabinet",
-                "bicycle",
-                "bicycle-electric",
-                "motorbike",
-                "motorbike-electric",
-                "account-cash",
-              ].map((icon, index) => (
+              {icons.map((icon, index) => (
                 <IconComponent
                   key={index}
                   source={icon}
@@ -300,8 +275,8 @@ export default function TCGroupDetail({ navigation, route }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>

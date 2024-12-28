@@ -13,7 +13,7 @@ export default function IndicesNeedBill({ navigation, route }) {
   const [monthYear, setMonthYear] = useState(new Date());
   const INDICES = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("INDICES");
 
   //fetch
@@ -99,6 +99,7 @@ export default function IndicesNeedBill({ navigation, route }) {
         data={indicesData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListFooterComponent={<View style={{ height: 90 }}></View>}
       />
       <FAB
         icon="plus"

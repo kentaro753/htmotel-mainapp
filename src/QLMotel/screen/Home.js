@@ -34,15 +34,15 @@ export default function Home({ navigation }) {
     if (userLogin != null) {
       const RENTERS = firestore()
         .collection("USERS")
-        .doc(userLogin.email)
+        .doc(userLogin?.email)
         .collection("RENTERS");
       const ROOMS = firestore()
         .collection("USERS")
-        .doc(userLogin.email)
+        .doc(userLogin?.email)
         .collection("ROOMS");
       const SERVICES = firestore()
         .collection("USERS")
-        .doc(userLogin.email)
+        .doc(userLogin?.email)
         .collection("SERVICES");
       const loadrenter = RENTERS.onSnapshot((response) => {
         var arr = [];
@@ -234,7 +234,7 @@ export default function Home({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity
           style={{ width: "30%", alignItems: "center", margin: 5 }}
-          onPress={() => navigation.navigate("Renters")}
+          onPress={() => navigation.navigate("TTabRenter")}
         >
           <Icon
             source="account-multiple"

@@ -43,80 +43,85 @@ export default function ThuChiUpdate({ navigation, route }) {
   const { userLogin } = controller;
   const THUCHIS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("THUCHIS");
-    const handleUpdateThuChi = async () => {
-      try {
-        if (selectGroup === "") {
-          Alert.alert("Chưa chọn nhóm giao dịch!");
-        } else if (money <= 0) {
-          Alert.alert("Khoản giao dịch không được nhỏ hơn hoặc bằng 0!");
-        } else if (target.table != "" && target.id == "") {
-          Alert.alert("Chưa chọn đối tượng!");
-        } else {
-          await THUCHIS.doc(id)
-            .update({
-              date: date.toLocaleDateString("vi"),
-              money,
-              type,
-              note,
-              group: selectGroup,
-              target,
-            })
-            .then(async () => {
-              let upImage = [];
-    
-              if (imageCount !== 0) {
-                const uploadPromises = images.map(async (image, index) => {
-                  const position = index + 1; // Vị trí hiện tại của ảnh trong danh sách
-                  const refImage = storage().ref(`/images/${id}-image${position}.jpg`);
-    
-                  if (image.url.startsWith("https://")) {
-                    // Tải dữ liệu từ URL cũ
-                    try {
-                      const response = await fetch(image.url);
-                      const blob = await response.blob();
-    
-                      // Tải lên vị trí mới trong Firebase
-                      await refImage.put(blob);
-                      const link = await refImage.getDownloadURL();
-    
-                      // Cập nhật URL mới
-                      upImage.push({ url: link });
-                    } catch (e) {
-                      console.error("Lỗi khi sao chép ảnh cũ:", e.message);
-                    }
-                  } else {
-                    // Tải ảnh mới lên Firebase
-                    try {
-                      await refImage.putFile(image.url);
-                      const link = await refImage.getDownloadURL();
-                      upImage.push({ url: link });
-                    } catch (e) {
-                      console.error("Lỗi khi tải lên ảnh mới:", e.message);
-                    }
+  const handleUpdateThuChi = async () => {
+    try {
+      if (selectGroup === "") {
+        Alert.alert("Chưa chọn nhóm giao dịch!");
+      } else if (money <= 0) {
+        Alert.alert("Khoản giao dịch không được nhỏ hơn hoặc bằng 0!");
+      } else if (target.table != "" && target.id == "") {
+        Alert.alert("Chưa chọn đối tượng!");
+      } else {
+        await THUCHIS.doc(id)
+          .update({
+            date: date.toLocaleDateString("vi"),
+            money,
+            type,
+            note,
+            group: selectGroup,
+            target,
+          })
+          .then(async () => {
+            let upImage = [];
+
+            if (imageCount !== 0) {
+              const uploadPromises = images.map(async (image, index) => {
+                const position = index + 1; // Vị trí hiện tại của ảnh trong danh sách
+                const refImage = storage().ref(
+                  `/images/${id}-image${position}.jpg`
+                );
+
+                if (image.url.startsWith("https://")) {
+                  // Tải dữ liệu từ URL cũ
+                  try {
+                    const response = await fetch(image.url);
+                    const blob = await response.blob();
+
+                    // Tải lên vị trí mới trong Firebase
+                    await refImage.put(blob);
+                    const link = await refImage.getDownloadURL();
+
+                    // Cập nhật URL mới
+                    upImage.push({ url: link });
+                  } catch (e) {
+                    console.error("Lỗi khi sao chép ảnh cũ:", e.message);
                   }
-                });
-    
-                // Chờ tất cả ảnh được xử lý
-                await Promise.all(uploadPromises);
-    
-                // Cập nhật danh sách ảnh lên Firestore
-                await THUCHIS.doc(id).update({ images: upImage });
-              }
-            })
-            .then(() => {
-              Alert.alert("Cập nhật giao dịch thành công");
-              navigation.goBack();
-            })
-            .catch((e) => {
-              Alert.alert(e.message);
-            });
-        }
-      } catch (e) {
-        Alert.alert(e.message);
+                } else {
+                  // Tải ảnh mới lên Firebase
+                  try {
+                    await refImage.putFile(image.url);
+                    const link = await refImage.getDownloadURL();
+                    upImage.push({ url: link });
+                  } catch (e) {
+                    console.error("Lỗi khi tải lên ảnh mới:", e.message);
+                  }
+                }
+              });
+
+              // Chờ tất cả ảnh được xử lý
+              await Promise.all(uploadPromises);
+
+              // Cập nhật danh sách ảnh lên Firestore
+              await THUCHIS.doc(id).update({ images: upImage });
+            }
+            if (imageCount == 0) {
+              await THUCHIS.doc(id).update({ images: upImage });
+            }
+          })
+          .then(() => {
+            Alert.alert("Cập nhật giao dịch thành công");
+            navigation.goBack();
+          })
+          .catch((e) => {
+            Alert.alert(e.message);
+          });
       }
-    };
+    } catch (e) {
+      Alert.alert(e.message);
+    }
+  };
 
   useEffect(() => {
     const loadthuchi = THUCHIS.doc(id).onSnapshot((response) => {

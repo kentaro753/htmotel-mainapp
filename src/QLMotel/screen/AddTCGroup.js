@@ -22,10 +22,12 @@ export default function AddTCGroup({ navigation }) {
   const [selectIcon, setSelectIcon] = useState("help");
   const [type, setType] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [icons, setIcons] = useState([]);
   const { userLogin } = controller;
+  const ICONS = firestore().collection("ICONS").doc("thuchiIcon");
   const TCGROUPS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("TCGROUPS");
   const handleAddNewGroup = async () => {
     try {
@@ -60,23 +62,15 @@ export default function AddTCGroup({ navigation }) {
     }
   };
 
-  // useEffect(() => {
-  //   ROOMS.orderBy("roomName", "asc").onSnapshot(
-  //     (response) => {
-  //       const arr = [];
-  //       response.forEach((doc) => {
-  //         const data = doc.data();
-  //         if (data.id != null) {
-  //           arr.push(data);
-  //         }
-  //       });
-  //       setRoomData(arr);
-  //     },
-  //     (error) => {
-  //       console.error(error);
-  //     }
-  //   );
-  // }, [userLogin]);
+  useEffect(() => {
+    const loadicon = ICONS.onSnapshot((doc) => {
+      const iconData = doc.data();
+      setIcons(iconData.list);
+    });
+    return () => {
+      loadicon();
+    };
+  }, []);
 
   const toggleModal = () => {
     setIsModalVisible(!isModalVisible);
@@ -255,39 +249,7 @@ export default function AddTCGroup({ navigation }) {
         <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.modalContent}>
-              {[
-                "lightbulb-on-outline",
-                "lightning-bolt-circle",
-                "lightning-bolt",
-                "lightbulb-cfl",
-                "lightbulb-fluorescent-tube-outline",
-                "lightbulb",
-                "flashlight",
-                "home-lightning-bolt",
-                "water",
-                "water-pump",
-                "swim",
-                "wifi",
-                "car-side",
-                "washing-machine",
-                "car-wash",
-                "fridge-outline",
-                "television",
-                "deskphone",
-                "desktop-tower-monitor",
-                "ceiling-fan",
-                "fan",
-                "air-conditioner",
-                "hair-dryer",
-                "iron-outline",
-                "bed",
-                "file-cabinet",
-                "bicycle",
-                "bicycle-electric",
-                "motorbike",
-                "motorbike-electric",
-                "account-cash",
-              ].map((icon, index) => (
+              {icons.map((icon, index) => (
                 <IconComponent
                   key={index}
                   source={icon}
@@ -305,8 +267,8 @@ export default function AddTCGroup({ navigation }) {
               borderRadius: 0,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 22 }}>
-              Dismiss
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>
+              Đóng
             </Text>
           </Button>
         </View>

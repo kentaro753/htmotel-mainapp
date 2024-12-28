@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
-import { Button, Text, TextInput } from "react-native-paper";
+import { Alert, StyleSheet, Text, View } from "react-native";
+import { Button, TextInput } from "react-native-paper";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { useMyContextProvider } from "../store/index";
@@ -43,16 +43,16 @@ export default function ChangePass({ navigation }) {
           .then(() => {
             firestore()
               .collection("USERS")
-              .doc(userLogin.email)
+              .doc(userLogin?.email)
               .update({ password: newPassword });
-            USERS.doc(userLogin.email).onSnapshot(async (u) => {
+            USERS.doc(userLogin?.email).onSnapshot(async (u) => {
               if (u.exists) {
                 const userData = u.data();
                 await AsyncStorage.setItem("user", JSON.stringify(userData));
                 dispatch({ type: "USER_LOGIN", value: userData });
               }
             });
-            Alert.alert("Change password susscced");
+            Alert.alert("Đổi mật khẩu thành công!");
           })
           .catch((e) => console.log(e.message));
       })
@@ -72,32 +72,40 @@ export default function ChangePass({ navigation }) {
         placeholder={"Mật khẩu hiện tại"}
         value={curenPassword}
         onChangeText={setCurenPassword}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
       />
       <TextInput
         secureTextEntry={!showPassword}
         placeholder={"Mật khẩu mới"}
         value={newPassword}
         onChangeText={setNewPassWord}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
       />
       <TextInput
         secureTextEntry={!showPassword}
         placeholder={"Nhập lại mật khẩu mới"}
         value={confirmNewPassword}
         onChangeText={setConfirmNewPassword}
-        style={{ marginBottom: 20, backgroundColor: null }}
+        activeUnderlineColor="#ff944d"
+        style={{ marginBottom: 20, backgroundColor: "#fff", borderWidth: 1 }}
       />
       <Button textColor="red" onPress={toggleShowPassword}>
-        {showPassword ? "Hide Password" : "Show Password"}
+        {showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
       </Button>
       <Button
-        textColor="#000"
-        style={{ marginTop: 5, padding: 5, backgroundColor: "#98fb98" }}
         mode="contained"
+        textColor="#fff"
+        style={{
+          marginTop: 5,
+          padding: 5,
+          backgroundColor: "#ff6600",
+          borderRadius: 3,
+        }}
         onPress={handleChangePassword}
       >
-        Đổi mật khẩu
+        <Text style={{ fontSize: 18 }}>Đổi mật khẩu</Text>
       </Button>
     </View>
   );

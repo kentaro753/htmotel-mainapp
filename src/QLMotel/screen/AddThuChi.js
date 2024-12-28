@@ -43,7 +43,7 @@ export default function AddThuChi({ navigation }) {
   const { userLogin } = controller;
   const THUCHIS = firestore()
     .collection("USERS")
-    .doc(userLogin.email)
+    .doc(userLogin?.email)
     .collection("THUCHIS");
   const handleAddNewThuChi = async () => {
     try {
@@ -51,7 +51,7 @@ export default function AddThuChi({ navigation }) {
         Alert.alert("Chưa chọn nhóm giao dịch!");
       } else if (money <= 0) {
         Alert.alert("Khoản giao dịch không được nhỏ hơn hoặc bằng 0!");
-      } else if (target.table != "" && target.id =="") {
+      } else if (target.table != "" && target.id == "") {
         Alert.alert("Chưa chọn đối tượng!");
       } else {
         THUCHIS.add({
@@ -409,7 +409,9 @@ export default function AddThuChi({ navigation }) {
           }}
           onPress={handleAddNewThuChi}
         >
-          <Text style={{ color: "white", fontWeight: "bold" }}>Thêm giao dịch</Text>
+          <Text style={{ color: "white", fontWeight: "bold" }}>
+            Thêm giao dịch
+          </Text>
         </Button>
       </View>
     </ScrollView>
